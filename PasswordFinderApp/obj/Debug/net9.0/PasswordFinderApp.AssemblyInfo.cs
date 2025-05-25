@@ -10,15 +10,13 @@
 using System;
 using System.Reflection;
 
-[assembly: System.Reflection.AssemblyCompanyAttribute("WinFormsApp")]
+[assembly: System.Reflection.AssemblyCompanyAttribute("PasswordFinderApp")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
 [assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+94c1523fdefa2fa81eed6f225aa80e8f5182c9ee")]
-[assembly: System.Reflection.AssemblyProductAttribute("WinFormsApp")]
-[assembly: System.Reflection.AssemblyTitleAttribute("WinFormsApp")]
+[assembly: System.Reflection.AssemblyProductAttribute("PasswordFinderApp")]
+[assembly: System.Reflection.AssemblyTitleAttribute("PasswordFinderApp")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
-[assembly: System.Runtime.Versioning.TargetPlatformAttribute("Windows7.0")]
-[assembly: System.Runtime.Versioning.SupportedOSPlatformAttribute("Windows7.0")]
 
 // Généré par la classe MSBuild WriteCodeFragment.
 
