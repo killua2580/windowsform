@@ -33,6 +33,6 @@ partial class Form1
         this.ClientSize = new System.Drawing.Size(800, 450);
         this.Text = "Form1";
     }
-
-    #endregion
 }
+    #endregion
+    // Add any additional fields or properties here if needed

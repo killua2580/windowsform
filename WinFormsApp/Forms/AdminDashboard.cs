@@ -7,7 +7,7 @@ using Microsoft.Data.SqlClient;
 
 namespace WinFormsApp.Forms
 {
-    // Add AdminStatistics class
+    // AdminStatistics class
     public class AdminStatistics
     {
         public int TotalBooks { get; set; }
@@ -57,7 +57,9 @@ namespace WinFormsApp.Forms
 
             tabControl.TabPages.AddRange(new TabPage[] { dashTab, usersTab, booksTab });
             this.Controls.Add(tabControl);
-        }        private void CreateDashboardTab(TabPage tab)
+        }
+
+        private void CreateDashboardTab(TabPage tab)
         {
             Label lblTitle = new Label();
             lblTitle.Text = "Library Statistics";
@@ -90,7 +92,9 @@ namespace WinFormsApp.Forms
             
             // Load initial statistics
             LoadStatistics();
-        }        private void CreateStatBox(Panel parent, string title, string value, int x, int y, Color color, ref Label labelValueRef)
+        }
+
+        private void CreateStatBox(Panel parent, string title, string value, int x, int y, Color color, ref Label labelValueRef)
         {
             Panel box = new Panel();
             box.Location = new Point(x, y);
@@ -248,7 +252,8 @@ namespace WinFormsApp.Forms
                             command.ExecuteNonQuery();
                         }
                     }
-                      string action = block ? "blocked" : "unblocked";
+                    
+                    string action = block ? "blocked" : "unblocked";
                     MessageBox.Show($"User {action} successfully!", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
                     LoadUsers(listView);
                     LoadStatistics(); // Refresh statistics after user status change
@@ -311,7 +316,8 @@ namespace WinFormsApp.Forms
                                 command.ExecuteNonQuery();
                             }
                         }
-                          MessageBox.Show("User deleted successfully!", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        
+                        MessageBox.Show("User deleted successfully!", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
                         LoadUsers(listView);
                         LoadStatistics(); // Refresh statistics after user deletion
                     }
@@ -405,23 +411,14 @@ namespace WinFormsApp.Forms
             btnAddBook.Location = new Point(80, 285);
             btnAddBook.Size = new Size(120, 35);
             btnAddBook.BackColor = Color.Green;
-            btnAddBook.ForeColor = Color.White;
-            btnAddBook.Click += (s, e) => AddBook(txtTitle.Text, txtAuthor.Text, txtISBN.Text, 
-                txtCategory.Text, cmbField.SelectedItem?.ToString(), txtCoverUrl.Text, (int)numCount.Value);
-
-            grpAddBook.Controls.AddRange(new Control[] {
-                lblTitle, txtTitle, lblAuthor, txtAuthor, lblISBN, txtISBN,
-                lblCategory, txtCategory, lblField, cmbField, lblCover, txtCoverUrl, 
-                lblCount, numCount, btnAddBook
-            });
-
-            // Books List
+            btnAddBook.ForeColor = Color.White;            // Books List
             ListView lstBooks = new ListView();
             lstBooks.Location = new Point(450, 20);
             lstBooks.Size = new Size(700, 500);
             lstBooks.View = View.Details;
             lstBooks.FullRowSelect = true;
             lstBooks.GridLines = true;
+            lstBooks.MultiSelect = false; // Ensure single selection only
             lstBooks.Columns.AddRange(new ColumnHeader[] {
                 new ColumnHeader() { Text = "ID", Width = 50 },
                 new ColumnHeader() { Text = "Title", Width = 200 },
@@ -432,28 +429,63 @@ namespace WinFormsApp.Forms
                 new ColumnHeader() { Text = "Total", Width = 70 }
             });
 
+            btnAddBook.Click += (s, e) => {
+                AddBook(txtTitle.Text, txtAuthor.Text, txtISBN.Text, 
+                    txtCategory.Text, cmbField.SelectedItem?.ToString(), txtCoverUrl.Text, (int)numCount.Value, lstBooks);
+                
+                // Clear the form after successful addition
+                txtTitle.Clear();
+                txtAuthor.Clear();
+                txtISBN.Clear();
+                txtCategory.Clear();
+                cmbField.SelectedIndex = -1;
+                txtCoverUrl.Clear();
+                numCount.Value = 1;
+            };
+
+            grpAddBook.Controls.AddRange(new Control[] {
+                lblTitle, txtTitle, lblAuthor, txtAuthor, lblISBN, txtISBN,
+                lblCategory, txtCategory, lblField, cmbField, lblCover, txtCoverUrl, 
+                lblCount, numCount, btnAddBook
+            });
+
             Button btnRefreshBooks = new Button();
             btnRefreshBooks.Text = "Refresh Books";
             btnRefreshBooks.Location = new Point(450, 540);
             btnRefreshBooks.Size = new Size(120, 35);
             btnRefreshBooks.BackColor = Color.DodgerBlue;
             btnRefreshBooks.ForeColor = Color.White;
-            btnRefreshBooks.Click += (s, e) => LoadBooks(lstBooks);
-
-            Button btnDeleteBook = new Button();
+            btnRefreshBooks.Click += (s, e) => LoadBooks(lstBooks);            Button btnDeleteBook = new Button();
             btnDeleteBook.Text = "Delete Selected";
             btnDeleteBook.Location = new Point(590, 540);
             btnDeleteBook.Size = new Size(120, 35);
             btnDeleteBook.BackColor = Color.Red;
             btnDeleteBook.ForeColor = Color.White;
+            btnDeleteBook.Click += (s, e) => DeleteSelectedBook(lstBooks);            // Add a test button to verify database connection
+            Button btnTestDB = new Button();
+            btnTestDB.Text = "Test DB";
+            btnTestDB.Location = new Point(730, 540);
+            btnTestDB.Size = new Size(80, 35);
+            btnTestDB.BackColor = Color.Orange;
+            btnTestDB.ForeColor = Color.White;
+            btnTestDB.Click += (s, e) => TestDatabaseConnection();
 
-            tab.Controls.AddRange(new Control[] { grpAddBook, lstBooks, btnRefreshBooks, btnDeleteBook });
+            // Add a button to validate database structure
+            Button btnValidateDB = new Button();
+            btnValidateDB.Text = "Check DB";
+            btnValidateDB.Location = new Point(820, 540);
+            btnValidateDB.Size = new Size(80, 35);
+            btnValidateDB.BackColor = Color.Purple;
+            btnValidateDB.ForeColor = Color.White;
+            btnValidateDB.Click += (s, e) => ValidateDatabaseStructure();
+
+            tab.Controls.AddRange(new Control[] { grpAddBook, lstBooks, btnRefreshBooks, btnDeleteBook, btnTestDB, btnValidateDB });
             
             // Initial load
             LoadBooks(lstBooks);
         }
 
-        private void AddBook(string title, string author, string isbn, string category, string? field, string coverUrl, int count)
+        private void AddBook(string title, string author, string isbn, string category, string? field, string coverUrl, int count, ListView lstBooks)
         {
             if (string.IsNullOrEmpty(title) || string.IsNullOrEmpty(author))
             {
@@ -461,58 +493,79 @@ namespace WinFormsApp.Forms
                 return;
             }
 
-            using (var connection = DatabaseHelper.GetConnection())
+            try
             {
-                connection.Open();
-                string query = @"INSERT INTO Books (Title, Author, ISBN, Category, StudyField, CoverImage, AvailableCount, TotalCount)
-                                VALUES (@title, @author, @isbn, @category, @field, @cover, @count, @count)";
-
-                using (var command = new SqlCommand(query, connection))
+                using (var connection = DatabaseHelper.GetConnection())
                 {
-                    command.Parameters.AddWithValue("@title", title);
-                    command.Parameters.AddWithValue("@author", author);
-                    command.Parameters.AddWithValue("@isbn", isbn ?? "");
-                    command.Parameters.AddWithValue("@category", category ?? "");
-                    command.Parameters.AddWithValue("@field", field ?? "General");
-                    command.Parameters.AddWithValue("@cover", string.IsNullOrWhiteSpace(coverUrl) ? (object)DBNull.Value : coverUrl.Trim());
-                    command.Parameters.AddWithValue("@count", count);                    try
+                    connection.Open();
+                    string query = @"INSERT INTO Books (Title, Author, ISBN, Category, StudyField, CoverImage, AvailableCount, TotalCount)
+                                    VALUES (@title, @author, @isbn, @category, @field, @cover, @count, @count)";
+
+                    using (var command = new SqlCommand(query, connection))
                     {
+                        command.Parameters.AddWithValue("@title", title);
+                        command.Parameters.AddWithValue("@author", author);
+                        command.Parameters.AddWithValue("@isbn", isbn ?? "");
+                        command.Parameters.AddWithValue("@category", category ?? "");
+                        command.Parameters.AddWithValue("@field", field ?? "General");
+                        command.Parameters.AddWithValue("@cover", string.IsNullOrWhiteSpace(coverUrl) ? (object)DBNull.Value : coverUrl.Trim());
+                        command.Parameters.AddWithValue("@count", count);
+
                         command.ExecuteNonQuery();
                         MessageBox.Show("Book added successfully!", "Success");
+                        LoadBooks(lstBooks); // Refresh the book list
                         LoadStatistics(); // Refresh statistics after adding book
-                    }
-                    catch (Exception ex)
-                    {
-                        MessageBox.Show("Error adding book: " + ex.Message, "Error");
                     }
                 }
             }
-        }
-
-        private void LoadBooks(ListView listView)
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error adding book: " + ex.Message, "Error");
+            }
+        }        private void LoadBooks(ListView listView)
         {
             listView.Items.Clear();
-            using (var connection = DatabaseHelper.GetConnection())
+            try
             {
-                connection.Open();
-                string query = "SELECT * FROM Books ORDER BY Title";
-                using (var command = new SqlCommand(query, connection))
+                using (var connection = DatabaseHelper.GetConnection())
                 {
-                    using (var reader = command.ExecuteReader())
+                    connection.Open();
+                    string query = "SELECT * FROM Books ORDER BY Title";
+                    using (var command = new SqlCommand(query, connection))
                     {
-                        while (reader.Read())
+                        using (var reader = command.ExecuteReader())
                         {
-                            ListViewItem item = new ListViewItem(reader["BookID"].ToString());
-                            item.SubItems.Add(reader["Title"]?.ToString() ?? "");
-                            item.SubItems.Add(reader["Author"]?.ToString() ?? "");
-                            item.SubItems.Add(reader["Category"]?.ToString() ?? "");
-                            item.SubItems.Add(reader["StudyField"]?.ToString() ?? "");
-                            item.SubItems.Add(reader["AvailableCount"].ToString());
-                            item.SubItems.Add(reader["TotalCount"].ToString());
-                            listView.Items.Add(item);
+                            int bookCount = 0;
+                            while (reader.Read())
+                            {
+                                ListViewItem item = new ListViewItem(reader["BookID"].ToString());
+                                item.SubItems.Add(reader["Title"]?.ToString() ?? "");
+                                item.SubItems.Add(reader["Author"]?.ToString() ?? "");
+                                item.SubItems.Add(reader["Category"]?.ToString() ?? "");
+                                item.SubItems.Add(reader["StudyField"]?.ToString() ?? "");
+                                item.SubItems.Add(reader["AvailableCount"].ToString());
+                                item.SubItems.Add(reader["TotalCount"].ToString());
+                                item.Tag = reader["BookID"]; // Store BookID in Tag for easy access
+                                listView.Items.Add(item);
+                                bookCount++;
+                                
+                                // Debug: Show the first few book's Tag values
+                                if (bookCount <= 3)
+                                {
+                                    string debugMsg = $"Book {bookCount}: ID={reader["BookID"]}, Title={reader["Title"]}, Tag={item.Tag}";
+                                    MessageBox.Show(debugMsg, "Debug - Book Loading", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                                }
+                            }
+                            
+                            // Show final count
+                            MessageBox.Show($"Loaded {bookCount} books total", "Debug - Load Complete", MessageBoxButtons.OK, MessageBoxIcon.Information);
                         }
                     }
                 }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error loading books: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 
@@ -539,7 +592,9 @@ namespace WinFormsApp.Forms
             {
                 MessageBox.Show($"Error loading statistics: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
-        }        private AdminStatistics GetAdminStatistics()
+        }
+
+        private AdminStatistics GetAdminStatistics()
         {
             AdminStatistics stats = new AdminStatistics();
             
@@ -554,8 +609,8 @@ namespace WinFormsApp.Forms
                             (SELECT ISNULL(SUM(AvailableCount), 0) FROM Books) AS AvailableBooks,
                             (SELECT COUNT(*) FROM Reservations WHERE Status = 'Active') AS ReservedBooks,
                             (SELECT COUNT(*) FROM Users) AS TotalUsers,
-                            (SELECT COUNT(*) FROM Users WHERE IsBlocked = 0) AS ActiveUsers,
-                            (SELECT COUNT(*) FROM Users WHERE IsBlocked = 1) AS BlockedUsers,
+                            (SELECT COUNT(*) FROM Users WHERE IsBlocked = 'False') AS ActiveUsers,
+                            (SELECT COUNT(*) FROM Users WHERE IsBlocked = 'True') AS BlockedUsers,
                             (SELECT COUNT(*) FROM Reservations) AS TotalReservations,
                             (SELECT COUNT(*) FROM Likes) AS TotalLikes
                         ";
@@ -585,8 +640,163 @@ namespace WinFormsApp.Forms
             }
             
             return stats;
+        }        private void DeleteSelectedBook(ListView listView)
+        {
+            // First, verify the method is being called
+            MessageBox.Show("DeleteSelectedBook method called!", "Debug - Method Entry", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            
+            if (listView.SelectedItems.Count == 0)
+            {
+                MessageBox.Show("Please select a book to delete.", "No Selection", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            var selectedItem = listView.SelectedItems[0];
+            
+            // Critical debug: Check if Tag contains BookID
+            string debugInfo = $"Selection Debug:\n" +
+                             $"- Items selected: {listView.SelectedItems.Count}\n" +
+                             $"- Selected item Tag: {selectedItem.Tag?.ToString() ?? "NULL"}\n" +
+                             $"- First subitem (Title): {selectedItem.SubItems[1].Text}";
+            
+            MessageBox.Show(debugInfo, "Debug - Selection Info", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            
+            if (selectedItem.Tag == null || !int.TryParse(selectedItem.Tag.ToString(), out int bookId))
+            {
+                MessageBox.Show("Invalid book selection. The Tag property is missing or invalid.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+
+            string bookTitle = selectedItem.SubItems[1].Text;
+            var result = MessageBox.Show($"Are you sure you want to delete the book '{bookTitle}'?\n\nThis will also delete all related reservations and likes. This action cannot be undone.", 
+                "Confirm Delete", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+            
+            if (result == DialogResult.Yes)
+            {
+                try
+                {
+                    using (var connection = DatabaseHelper.GetConnection())
+                    {
+                        connection.Open();
+                        
+                        // Delete related records first (to avoid foreign key constraints)
+                        string deleteLikes = "DELETE FROM Likes WHERE BookID = @bookId";
+                        using (var command = new SqlCommand(deleteLikes, connection))
+                        {
+                            command.Parameters.AddWithValue("@bookId", bookId);
+                            command.ExecuteNonQuery();
+                        }
+                        
+                        string deleteReservations = "DELETE FROM Reservations WHERE BookID = @bookId";
+                        using (var command = new SqlCommand(deleteReservations, connection))
+                        {
+                            command.Parameters.AddWithValue("@bookId", bookId);
+                            command.ExecuteNonQuery();
+                        }
+                        
+                        // Delete the book
+                        string deleteBook = "DELETE FROM Books WHERE BookID = @bookId";
+                        using (var command = new SqlCommand(deleteBook, connection))
+                        {
+                            command.Parameters.AddWithValue("@bookId", bookId);
+                            int rowsAffected = command.ExecuteNonQuery();
+                            
+                            // Critical debug: Show final result
+                            string resultInfo = $"Delete Operation Result:\n" +
+                                              $"- BookID: {bookId}\n" +
+                                              $"- SQL: {deleteBook}\n" +
+                                              $"- Rows affected: {rowsAffected}";
+                            
+                            MessageBox.Show(resultInfo, "Debug - Delete Result", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                            
+                            if (rowsAffected > 0)
+                            {
+                                MessageBox.Show($"Book '{bookTitle}' deleted successfully!", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                                LoadBooks(listView); // Refresh the book list
+                                LoadStatistics(); // Refresh statistics after deletion
+                            }
+                            else
+                            {
+                                MessageBox.Show("Book could not be deleted. It may have already been removed.", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                            }
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Error deleting book: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+            }
         }
 
-        // ...existing code...
+        private void TestDatabaseConnection()
+        {
+            try
+            {
+                using (var connection = DatabaseHelper.GetConnection())
+                {
+                    connection.Open();
+                    
+                    // Test basic query
+                    string testQuery = "SELECT COUNT(*) FROM Books";
+                    using (var command = new SqlCommand(testQuery, connection))
+                    {
+                        var count = command.ExecuteScalar();
+                        MessageBox.Show($"Database connection successful!\nBooks in database: {count}", "Database Test", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Database connection failed!\nError: {ex.Message}", "Database Test", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private void ValidateDatabaseStructure()
+        {
+            try
+            {
+                using (var connection = DatabaseHelper.GetConnection())
+                {
+                    connection.Open();
+                    
+                    // Check if Books table exists
+                    string checkTableQuery = @"
+                        SELECT COUNT(*) 
+                        FROM INFORMATION_SCHEMA.TABLES 
+                        WHERE TABLE_NAME = 'Books'";
+                    
+                    using (var command = new SqlCommand(checkTableQuery, connection))
+                    {
+                        int tableExists = (int)command.ExecuteScalar();
+                        MessageBox.Show($"Books table exists: {tableExists > 0}", "Debug Table Check", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    }
+                    
+                    // Check table structure
+                    string checkColumnsQuery = @"
+                        SELECT COLUMN_NAME, DATA_TYPE, IS_NULLABLE
+                        FROM INFORMATION_SCHEMA.COLUMNS 
+                        WHERE TABLE_NAME = 'Books'
+                        ORDER BY ORDINAL_POSITION";
+                    
+                    using (var command = new SqlCommand(checkColumnsQuery, connection))
+                    {
+                        using (var reader = command.ExecuteReader())
+                        {
+                            string columns = "Books table structure:\n";
+                            while (reader.Read())
+                            {
+                                columns += $"- {reader["COLUMN_NAME"]} ({reader["DATA_TYPE"]}, Nullable: {reader["IS_NULLABLE"]})\n";
+                            }
+                            MessageBox.Show(columns, "Debug Table Structure", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error validating database structure: {ex.Message}", "Debug Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
     }
 }

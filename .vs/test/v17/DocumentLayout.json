@@ -1,7 +1,48 @@
 {
   "Version": 1,
   "WorkspaceRootPath": "C:\\Users\\GIGABYTE\\Desktop\\windowsform\\",
-  "Documents": [],
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{D057EDC6-D60F-3007-4B84-7ECBF7087272}|WinFormsApp\\WinFormsApp.csproj|c:\\users\\gigabyte\\desktop\\windowsform\\winformsapp\\forms\\registrationform.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}|Form",
+      "RelativeMoniker": "D:0:0:{D057EDC6-D60F-3007-4B84-7ECBF7087272}|WinFormsApp\\WinFormsApp.csproj|solutionrelative:winformsapp\\forms\\registrationform.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}|Form"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{D057EDC6-D60F-3007-4B84-7ECBF7087272}|WinFormsApp\\WinFormsApp.csproj|c:\\users\\gigabyte\\desktop\\windowsform\\winformsapp\\forms\\loginform.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}|Form",
+      "RelativeMoniker": "D:0:0:{D057EDC6-D60F-3007-4B84-7ECBF7087272}|WinFormsApp\\WinFormsApp.csproj|solutionrelative:winformsapp\\forms\\loginform.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}|Form"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{D057EDC6-D60F-3007-4B84-7ECBF7087272}|WinFormsApp\\WinFormsApp.csproj|c:\\users\\gigabyte\\desktop\\windowsform\\winformsapp\\forms\\chatbotform.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}|Form",
+      "RelativeMoniker": "D:0:0:{D057EDC6-D60F-3007-4B84-7ECBF7087272}|WinFormsApp\\WinFormsApp.csproj|solutionrelative:winformsapp\\forms\\chatbotform.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}|Form"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{D057EDC6-D60F-3007-4B84-7ECBF7087272}|WinFormsApp\\WinFormsApp.csproj|c:\\users\\gigabyte\\desktop\\windowsform\\winformsapp\\models\\user.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{D057EDC6-D60F-3007-4B84-7ECBF7087272}|WinFormsApp\\WinFormsApp.csproj|solutionrelative:winformsapp\\models\\user.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{D057EDC6-D60F-3007-4B84-7ECBF7087272}|WinFormsApp\\WinFormsApp.csproj|c:\\users\\gigabyte\\desktop\\windowsform\\winformsapp\\form1.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}|Form",
+      "RelativeMoniker": "D:0:0:{D057EDC6-D60F-3007-4B84-7ECBF7087272}|WinFormsApp\\WinFormsApp.csproj|solutionrelative:winformsapp\\form1.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}|Form"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{D057EDC6-D60F-3007-4B84-7ECBF7087272}|WinFormsApp\\WinFormsApp.csproj|c:\\users\\gigabyte\\desktop\\windowsform\\winformsapp\\form1.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{D057EDC6-D60F-3007-4B84-7ECBF7087272}|WinFormsApp\\WinFormsApp.csproj|solutionrelative:winformsapp\\form1.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{D057EDC6-D60F-3007-4B84-7ECBF7087272}|WinFormsApp\\WinFormsApp.csproj|c:\\users\\gigabyte\\desktop\\windowsform\\winformsapp\\form1.designer.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{D057EDC6-D60F-3007-4B84-7ECBF7087272}|WinFormsApp\\WinFormsApp.csproj|solutionrelative:winformsapp\\form1.designer.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{D057EDC6-D60F-3007-4B84-7ECBF7087272}|WinFormsApp\\WinFormsApp.csproj|c:\\users\\gigabyte\\desktop\\windowsform\\winformsapp\\forms\\admindashboard.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{D057EDC6-D60F-3007-4B84-7ECBF7087272}|WinFormsApp\\WinFormsApp.csproj|solutionrelative:winformsapp\\forms\\admindashboard.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{D057EDC6-D60F-3007-4B84-7ECBF7087272}|WinFormsApp\\WinFormsApp.csproj|c:\\users\\gigabyte\\desktop\\windowsform\\winformsapp\\resources\\chatgpt image apr 7, 2025, 05_33_33 pm.png||{177559E0-D141-11D0-92DF-00A0C9138C45}",
+      "RelativeMoniker": "D:0:0:{D057EDC6-D60F-3007-4B84-7ECBF7087272}|WinFormsApp\\WinFormsApp.csproj|solutionrelative:winformsapp\\resources\\chatgpt image apr 7, 2025, 05_33_33 pm.png||{177559E0-D141-11D0-92DF-00A0C9138C45}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{D057EDC6-D60F-3007-4B84-7ECBF7087272}|WinFormsApp\\WinFormsApp.csproj|c:\\users\\gigabyte\\desktop\\windowsform\\winformsapp\\resources\\306598131_553981393197532_8221545433072465799_n.jpg||{177559E0-D141-11D0-92DF-00A0C9138C45}",
+      "RelativeMoniker": "D:0:0:{D057EDC6-D60F-3007-4B84-7ECBF7087272}|WinFormsApp\\WinFormsApp.csproj|solutionrelative:winformsapp\\resources\\306598131_553981393197532_8221545433072465799_n.jpg||{177559E0-D141-11D0-92DF-00A0C9138C45}"
+    }
+  ],
   "DocumentGroupContainers": [
     {
       "Orientation": 0,
@@ -9,7 +50,7 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": -1,
+          "SelectedChildIndex": 6,
           "Children": [
             {
               "$type": "Bookmark",
@@ -34,6 +75,130 @@
             {
               "$type": "Bookmark",
               "Name": "ST:0:0:{b1e99781-ab81-11d0-b683-00aa00a3ee26}"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "RegistrationForm.cs [Conception]",
+              "DocumentMoniker": "C:\\Users\\GIGABYTE\\Desktop\\windowsform\\WinFormsApp\\Forms\\RegistrationForm.cs",
+              "RelativeDocumentMoniker": "WinFormsApp\\Forms\\RegistrationForm.cs",
+              "ToolTip": "C:\\Users\\GIGABYTE\\Desktop\\windowsform\\WinFormsApp\\Forms\\RegistrationForm.cs [Conception]",
+              "RelativeToolTip": "WinFormsApp\\Forms\\RegistrationForm.cs [Conception]",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-05-25T16:45:35.996Z",
+              "EditorCaption": " [Conception]"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "LoginForm.cs [Conception]",
+              "DocumentMoniker": "C:\\Users\\GIGABYTE\\Desktop\\windowsform\\WinFormsApp\\Forms\\LoginForm.cs",
+              "RelativeDocumentMoniker": "WinFormsApp\\Forms\\LoginForm.cs",
+              "ToolTip": "C:\\Users\\GIGABYTE\\Desktop\\windowsform\\WinFormsApp\\Forms\\LoginForm.cs [Conception]",
+              "RelativeToolTip": "WinFormsApp\\Forms\\LoginForm.cs [Conception]",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-05-25T16:45:34.789Z",
+              "EditorCaption": " [Conception]"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "ChatbotForm.cs [Conception]",
+              "DocumentMoniker": "C:\\Users\\GIGABYTE\\Desktop\\windowsform\\WinFormsApp\\Forms\\ChatbotForm.cs",
+              "RelativeDocumentMoniker": "WinFormsApp\\Forms\\ChatbotForm.cs",
+              "ToolTip": "C:\\Users\\GIGABYTE\\Desktop\\windowsform\\WinFormsApp\\Forms\\ChatbotForm.cs [Conception]",
+              "RelativeToolTip": "WinFormsApp\\Forms\\ChatbotForm.cs [Conception]",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-05-25T16:45:31.65Z",
+              "EditorCaption": " [Conception]"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "Form1.cs [Conception]",
+              "DocumentMoniker": "C:\\Users\\GIGABYTE\\Desktop\\windowsform\\WinFormsApp\\Form1.cs",
+              "RelativeDocumentMoniker": "WinFormsApp\\Form1.cs",
+              "ToolTip": "C:\\Users\\GIGABYTE\\Desktop\\windowsform\\WinFormsApp\\Form1.cs [Conception]",
+              "RelativeToolTip": "WinFormsApp\\Form1.cs [Conception]",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-05-25T16:43:17.44Z",
+              "EditorCaption": " [Conception]"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 5,
+              "Title": "Form1.cs",
+              "DocumentMoniker": "C:\\Users\\GIGABYTE\\Desktop\\windowsform\\WinFormsApp\\Form1.cs",
+              "RelativeDocumentMoniker": "WinFormsApp\\Form1.cs",
+              "ToolTip": "C:\\Users\\GIGABYTE\\Desktop\\windowsform\\WinFormsApp\\Form1.cs",
+              "RelativeToolTip": "WinFormsApp\\Form1.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAcAAAAFAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-05-25T16:42:16.345Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 6,
+              "Title": "Form1.Designer.cs",
+              "DocumentMoniker": "C:\\Users\\GIGABYTE\\Desktop\\windowsform\\WinFormsApp\\Form1.Designer.cs",
+              "RelativeDocumentMoniker": "WinFormsApp\\Form1.Designer.cs",
+              "ToolTip": "C:\\Users\\GIGABYTE\\Desktop\\windowsform\\WinFormsApp\\Form1.Designer.cs",
+              "RelativeToolTip": "WinFormsApp\\Form1.Designer.cs",
+              "ViewState": "AgIAABoAAAAAAAAAAAAuwCUAAAAXAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-05-25T16:40:34.101Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 8,
+              "Title": "ChatGPT Image Apr 7, 2025, 05_33_33 PM.png -  [Fran\u00E7ais (France)] - PNG [1536x1024, 24 bits, PNG]",
+              "DocumentMoniker": "C:\\Users\\GIGABYTE\\Desktop\\windowsform\\WinFormsApp\\Resources\\ChatGPT Image Apr 7, 2025, 05_33_33 PM.png",
+              "RelativeDocumentMoniker": "WinFormsApp\\Resources\\ChatGPT Image Apr 7, 2025, 05_33_33 PM.png",
+              "ToolTip": "C:\\Users\\GIGABYTE\\Desktop\\windowsform\\WinFormsApp\\Resources\\ChatGPT Image Apr 7, 2025, 05_33_33 PM.png -  [Fran\u00E7ais (France)] - PNG [1536x1024, 24 bits, PNG]",
+              "RelativeToolTip": "WinFormsApp\\Resources\\ChatGPT Image Apr 7, 2025, 05_33_33 PM.png -  [Fran\u00E7ais (France)] - PNG [1536x1024, 24 bits, PNG]",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001533|",
+              "WhenOpened": "2025-05-25T16:39:48.661Z",
+              "EditorCaption": " -  [Fran\u00E7ais (France)] - PNG [1536x1024, 24 bits, PNG]"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 9,
+              "Title": "306598131_553981393197532_8221545433072465799_n.jpg -  [Fran\u00E7ais (France)] - Bitmap [1079x1079, 24 bits, JPG]",
+              "DocumentMoniker": "C:\\Users\\GIGABYTE\\Desktop\\windowsform\\WinFormsApp\\Resources\\306598131_553981393197532_8221545433072465799_n.jpg",
+              "RelativeDocumentMoniker": "WinFormsApp\\Resources\\306598131_553981393197532_8221545433072465799_n.jpg",
+              "ToolTip": "C:\\Users\\GIGABYTE\\Desktop\\windowsform\\WinFormsApp\\Resources\\306598131_553981393197532_8221545433072465799_n.jpg -  [Fran\u00E7ais (France)] - Bitmap [1079x1079, 24 bits, JPG]",
+              "RelativeToolTip": "WinFormsApp\\Resources\\306598131_553981393197532_8221545433072465799_n.jpg -  [Fran\u00E7ais (France)] - Bitmap [1079x1079, 24 bits, JPG]",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001533|",
+              "WhenOpened": "2025-05-25T16:39:45.412Z",
+              "EditorCaption": " -  [Fran\u00E7ais (France)] - Bitmap [1079x1079, 24 bits, JPG]"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "User.cs",
+              "DocumentMoniker": "C:\\Users\\GIGABYTE\\Desktop\\windowsform\\WinFormsApp\\Models\\User.cs",
+              "RelativeDocumentMoniker": "WinFormsApp\\Models\\User.cs",
+              "ToolTip": "C:\\Users\\GIGABYTE\\Desktop\\windowsform\\WinFormsApp\\Models\\User.cs",
+              "RelativeToolTip": "WinFormsApp\\Models\\User.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-05-25T16:39:37.452Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 7,
+              "Title": "AdminDashboard.cs",
+              "DocumentMoniker": "C:\\Users\\GIGABYTE\\Desktop\\windowsform\\WinFormsApp\\Forms\\AdminDashboard.cs",
+              "RelativeDocumentMoniker": "WinFormsApp\\Forms\\AdminDashboard.cs",
+              "ToolTip": "C:\\Users\\GIGABYTE\\Desktop\\windowsform\\WinFormsApp\\Forms\\AdminDashboard.cs",
+              "RelativeToolTip": "WinFormsApp\\Forms\\AdminDashboard.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-05-25T16:39:30.149Z",
+              "EditorCaption": ""
             }
           ]
         }
