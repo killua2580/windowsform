@@ -6,7 +6,7 @@ using System.Text;
 namespace WinFormsApp.Data
 {    public class DatabaseHelper
     {
-        private static string connectionString = "Server=DESKTOP-HS2GE4G;Database=lib;Trusted_Connection=true;TrustServerCertificate=true;";
+        private static string connectionString = "Server=DESKTOP-RH1OPSL;Database=lib;Trusted_Connection=true;TrustServerCertificate=true;";
 
         public static void InitializeDatabase()
         {
