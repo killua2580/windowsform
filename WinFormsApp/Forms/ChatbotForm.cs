@@ -7,14 +7,15 @@ using System.Collections.Generic;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Threading.Tasks;
+using Microsoft.Data.SqlClient;
 
 namespace WinFormsApp.Forms
 {
     public partial class ChatbotForm : Form
     {
-        private TextBox txtMessage;
-        private RichTextBox rtbChat;
-        private Button btnSend;
+        private TextBox txtMessage = null!;
+        private RichTextBox rtbChat = null!;
+        private Button btnSend = null!;
         private User currentUser;
 
         public ChatbotForm(User user)
@@ -57,7 +58,7 @@ namespace WinFormsApp.Forms
             AddMessage("Bot", "Hello! I'm your library assistant. Ask me about books, availability, or recommendations!");
         }
 
-        private void TxtMessage_KeyPress(object sender, KeyPressEventArgs e)
+        private void TxtMessage_KeyPress(object? sender, KeyPressEventArgs e)
         {
             if (e.KeyChar == (char)Keys.Enter)
             {
@@ -66,7 +67,7 @@ namespace WinFormsApp.Forms
             }
         }
 
-        private void BtnSend_Click(object sender, EventArgs e)
+        private void BtnSend_Click(object? sender, EventArgs e)
         {
             SendMessage();
         }
@@ -183,10 +184,10 @@ namespace WinFormsApp.Forms
             using (var connection = DatabaseHelper.GetConnection())
             {
                 connection.Open();
-                string query = "SELECT Title, Author FROM Books WHERE StudyField = @field OR StudyField = 'General' LIMIT 3";
-                using (var command = new System.Data.SQLite.SQLiteCommand(query, connection))
+                string query = "SELECT TOP 3 Title, Author FROM Books WHERE StudyField = @field OR StudyField = 'General'";
+                using (var command = new SqlCommand(query, connection))
                 {
-                    command.Parameters.AddWithValue("@field", currentUser.StudyField);
+                    command.Parameters.AddWithValue("@field", currentUser.StudyField ?? "General");
                     using (var reader = command.ExecuteReader())
                     {
                         while (reader.Read())
@@ -207,4 +208,4 @@ namespace WinFormsApp.Forms
             }
         }
     }
-} 
+}

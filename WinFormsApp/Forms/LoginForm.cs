@@ -3,17 +3,18 @@ using System.Drawing;
 using System.Windows.Forms;
 using WinFormsApp.Models;
 using WinFormsApp.Data;
+using Microsoft.Data.SqlClient;
 
 namespace WinFormsApp.Forms
 {
     public partial class LoginForm : Form
     {
-        private TextBox txtEmail;
-        private TextBox txtPassword;
-        private Button btnLogin;
-        private Button btnRegister;
-        private Button btnSkip;
-        private Label lblTitle;
+        private TextBox txtEmail = null!;
+        private TextBox txtPassword = null!;
+        private Button btnLogin = null!;
+        private Button btnRegister = null!;
+        private Button btnSkip = null!;
+        private Label lblTitle = null!;
 
         public LoginForm()
         {
@@ -139,7 +140,7 @@ namespace WinFormsApp.Forms
             this.Controls.Add(panel);
         }
 
-        private void BtnLogin_Click(object sender, EventArgs e)
+        private void BtnLogin_Click(object? sender, EventArgs e)
         {
             string email = txtEmail.Text.Trim();
             string password = txtPassword.Text;
@@ -150,42 +151,91 @@ namespace WinFormsApp.Forms
                 return;
             }
 
-            User user = AuthenticateUser(email, password);
-            if (user != null)
+            // Debug: Show what we're trying to authenticate
+            try
             {
-                if (user.IsBlocked)
+                using (var connection = DatabaseHelper.GetConnection())
                 {
-                    MessageBox.Show("Your account has been blocked. Please contact administration.", "Access Denied", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                    return;
-                }
+                    connection.Open();
+                    
+                    // First, let's check if the user exists at all
+                    string checkUserQuery = "SELECT UserID, Email, FirstName, LastName, Password, IsBlocked, IsAdmin FROM Users WHERE Email = @email";
+                    using (var checkCommand = new SqlCommand(checkUserQuery, connection))
+                    {
+                        checkCommand.Parameters.AddWithValue("@email", email);
+                        using (var reader = checkCommand.ExecuteReader())
+                        {
+                            if (reader.Read())
+                            {
+                                string storedPassword = reader["Password"]?.ToString() ?? "";
+                                bool isBlocked = Convert.ToBoolean(reader["IsBlocked"]);
+                                bool isAdmin = Convert.ToBoolean(reader["IsAdmin"]);
+                                string firstName = reader["FirstName"]?.ToString() ?? "";
+                                
+                                reader.Close();
+                                
+                                // Debug information
+                                string debugInfo = $"User found: {firstName}\n";
+                                debugInfo += $"Stored password length: {storedPassword.Length}\n";
+                                debugInfo += $"Entered password: {password}\n";
+                                debugInfo += $"Hashed entered password: {DatabaseHelper.HashPassword(password)}\n";
+                                debugInfo += $"Password match (plain): {storedPassword == password}\n";
+                                debugInfo += $"Password match (hashed): {storedPassword == DatabaseHelper.HashPassword(password)}\n";
+                                debugInfo += $"Is Admin: {isAdmin}\n";
+                                debugInfo += $"Is Blocked: {isBlocked}";
+                                
+                                MessageBox.Show(debugInfo, "Debug Info", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                                
+                                // Try authentication
+                                User? user = AuthenticateUser(email, password);
+                                if (user != null)
+                                {
+                                    if (user.IsBlocked)
+                                    {
+                                        MessageBox.Show("Your account has been blocked. Please contact administration.", "Access Denied", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                                        return;
+                                    }
 
-                this.Hide();
-                if (user.IsAdmin)
-                {
-                    AdminDashboard adminForm = new AdminDashboard(user);
-                    adminForm.ShowDialog();
+                                    this.Hide();
+                                    if (user.IsAdmin)
+                                    {
+                                        AdminDashboard adminForm = new AdminDashboard(user);
+                                        adminForm.ShowDialog();
+                                    }
+                                    else
+                                    {
+                                        StudentDashboard studentForm = new StudentDashboard(user);
+                                        studentForm.ShowDialog();
+                                    }
+                                    this.Show();
+                                    txtPassword.Clear();
+                                }
+                                else
+                                {
+                                    MessageBox.Show("Authentication failed - password mismatch.", "Login Failed", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                                }
+                            }
+                            else
+                            {
+                                MessageBox.Show($"No user found with email: {email}", "User Not Found", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                            }
+                        }
+                    }
                 }
-                else
-                {
-                    StudentDashboard studentForm = new StudentDashboard(user);
-                    studentForm.ShowDialog();
-                }
-                this.Show();
-                txtPassword.Clear();
             }
-            else
+            catch (Exception ex)
             {
-                MessageBox.Show("Invalid email or password.", "Login Failed", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show($"Database connection error: {ex.Message}", "Connection Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 
-        private void BtnRegister_Click(object sender, EventArgs e)
+        private void BtnRegister_Click(object? sender, EventArgs e)
         {
             RegistrationForm regForm = new RegistrationForm();
             regForm.ShowDialog();
         }
 
-        private void BtnSkip_Click(object sender, EventArgs e)
+        private void BtnSkip_Click(object? sender, EventArgs e)
         {
             // Create a guest user
             var guestUser = new User
@@ -197,7 +247,8 @@ namespace WinFormsApp.Forms
                 StudyLevel = "N/A",
                 StudyField = "General",
                 IsBlocked = false,
-                IsAdmin = false
+                IsAdmin = false,
+                Password = "" // Required property
             };
             this.Hide();
             StudentDashboard studentForm = new StudentDashboard(guestUser);
@@ -205,13 +256,15 @@ namespace WinFormsApp.Forms
             this.Show();
         }
 
-        private User AuthenticateUser(string email, string password)
+        private User? AuthenticateUser(string email, string password)
         {
             using (var connection = DatabaseHelper.GetConnection())
             {
                 connection.Open();
+                
+                // First try with hashed password (for new users)
                 string query = "SELECT * FROM Users WHERE Email = @email AND Password = @password";
-                using (var command = new System.Data.SQLite.SQLiteCommand(query, connection))
+                using (var command = new SqlCommand(query, connection))
                 {
                     command.Parameters.AddWithValue("@email", email);
                     command.Parameters.AddWithValue("@password", DatabaseHelper.HashPassword(password));
@@ -223,14 +276,101 @@ namespace WinFormsApp.Forms
                             return new User
                             {
                                 UserID = Convert.ToInt32(reader["UserID"]),
-                                Email = reader["Email"].ToString(),
-                                FirstName = reader["FirstName"].ToString(),
-                                LastName = reader["LastName"].ToString(),
-                                StudyLevel = reader["StudyLevel"].ToString(),
-                                StudyField = reader["StudyField"].ToString(),
+                                Email = reader["Email"]?.ToString() ?? "",
+                                FirstName = reader["FirstName"]?.ToString() ?? "",
+                                LastName = reader["LastName"]?.ToString() ?? "",
+                                StudyLevel = reader["StudyLevel"]?.ToString(),
+                                StudyField = reader["StudyField"]?.ToString(),
+                                ProfilePicture = reader["ProfilePicture"]?.ToString(),
                                 IsBlocked = Convert.ToBoolean(reader["IsBlocked"]),
-                                IsAdmin = Convert.ToBoolean(reader["IsAdmin"])
+                                IsAdmin = Convert.ToBoolean(reader["IsAdmin"]),
+                                CreatedDate = Convert.ToDateTime(reader["CreatedDate"]),
+                                Password = reader["Password"]?.ToString() ?? ""
                             };
+                        }
+                    }
+                }
+                
+                // If hashed password doesn't work, try with plain text password (for existing users)
+                // and update the password to hashed version
+                string plainQuery = "SELECT * FROM Users WHERE Email = @email AND Password = @plainPassword";
+                using (var plainCommand = new SqlCommand(plainQuery, connection))
+                {
+                    plainCommand.Parameters.AddWithValue("@email", email);
+                    plainCommand.Parameters.AddWithValue("@plainPassword", password);
+
+                    using (var reader = plainCommand.ExecuteReader())
+                    {
+                        if (reader.Read())
+                        {
+                            var user = new User
+                            {
+                                UserID = Convert.ToInt32(reader["UserID"]),
+                                Email = reader["Email"]?.ToString() ?? "",
+                                FirstName = reader["FirstName"]?.ToString() ?? "",
+                                LastName = reader["LastName"]?.ToString() ?? "",
+                                StudyLevel = reader["StudyLevel"]?.ToString(),
+                                StudyField = reader["StudyField"]?.ToString(),
+                                ProfilePicture = reader["ProfilePicture"]?.ToString(),
+                                IsBlocked = Convert.ToBoolean(reader["IsBlocked"]),
+                                IsAdmin = Convert.ToBoolean(reader["IsAdmin"]),
+                                CreatedDate = Convert.ToDateTime(reader["CreatedDate"]),
+                                Password = reader["Password"]?.ToString() ?? ""
+                            };
+                            
+                            reader.Close();
+                            
+                            // Update password to hashed version for security
+                            string updateQuery = "UPDATE Users SET Password = @hashedPassword WHERE UserID = @userId";
+                            using (var updateCommand = new SqlCommand(updateQuery, connection))
+                            {
+                                updateCommand.Parameters.AddWithValue("@hashedPassword", DatabaseHelper.HashPassword(password));
+                                updateCommand.Parameters.AddWithValue("@userId", user.UserID);
+                                updateCommand.ExecuteNonQuery();
+                            }
+                            
+                            return user;
+                        }
+                    }
+                }
+                
+                // Also try with default password for existing users without passwords
+                string defaultQuery = "SELECT * FROM Users WHERE Email = @email AND (Password = 'defaultPassword123' OR Password IS NULL)";
+                using (var defaultCommand = new SqlCommand(defaultQuery, connection))
+                {
+                    defaultCommand.Parameters.AddWithValue("@email", email);
+
+                    using (var reader = defaultCommand.ExecuteReader())
+                    {
+                        if (reader.Read() && password == "defaultPassword123")
+                        {
+                            var user = new User
+                            {
+                                UserID = Convert.ToInt32(reader["UserID"]),
+                                Email = reader["Email"]?.ToString() ?? "",
+                                FirstName = reader["FirstName"]?.ToString() ?? "",
+                                LastName = reader["LastName"]?.ToString() ?? "",
+                                StudyLevel = reader["StudyLevel"]?.ToString(),
+                                StudyField = reader["StudyField"]?.ToString(),
+                                ProfilePicture = reader["ProfilePicture"]?.ToString(),
+                                IsBlocked = Convert.ToBoolean(reader["IsBlocked"]),
+                                IsAdmin = Convert.ToBoolean(reader["IsAdmin"]),
+                                CreatedDate = Convert.ToDateTime(reader["CreatedDate"]),
+                                Password = reader["Password"]?.ToString() ?? ""
+                            };
+                            
+                            reader.Close();
+                            
+                            // Update password to hashed version
+                            string updateQuery = "UPDATE Users SET Password = @hashedPassword WHERE UserID = @userId";
+                            using (var updateCommand = new SqlCommand(updateQuery, connection))
+                            {
+                                updateCommand.Parameters.AddWithValue("@hashedPassword", DatabaseHelper.HashPassword(password));
+                                updateCommand.Parameters.AddWithValue("@userId", user.UserID);
+                                updateCommand.ExecuteNonQuery();
+                            }
+                            
+                            return user;
                         }
                     }
                 }
@@ -238,4 +378,4 @@ namespace WinFormsApp.Forms
             return null;
         }
     }
-} 
+}

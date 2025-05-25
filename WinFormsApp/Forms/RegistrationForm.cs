@@ -4,16 +4,16 @@ using System.IO;
 using System.Windows.Forms;
 using WinFormsApp.Models;
 using WinFormsApp.Data;
+using Microsoft.Data.SqlClient;
 
 namespace WinFormsApp.Forms
 {
     public partial class RegistrationForm : Form
     {
-        private TextBox txtEmail, txtFirstName, txtLastName;
-        private ComboBox cmbStudyLevel, cmbStudyField;
-        private PictureBox picProfile;
-        private Button btnRegister, btnSelectImage, btnSkip;
-        private byte[] profileImageBytes;
+        private TextBox txtEmail = null!, txtFirstName = null!, txtLastName = null!, txtProfilePictureUrl = null!;
+        private ComboBox cmbStudyLevel = null!, cmbStudyField = null!;
+        private PictureBox picProfile = null!;
+        private Button btnRegister = null!, btnLoadImage = null!, btnSkip = null!;
 
         public RegistrationForm()
         {
@@ -154,31 +154,40 @@ namespace WinFormsApp.Forms
 
             // Profile Picture
             Label lblProfile = new Label();
-            lblProfile.Text = "Profile Picture:";
+            lblProfile.Text = "Profile Picture URL:";
             lblProfile.Location = new Point(40, yPos);
-            lblProfile.Size = new Size(120, 22);
+            lblProfile.Size = new Size(150, 22);
             lblProfile.Font = new Font("Segoe UI", 12, FontStyle.Regular);
             lblProfile.ForeColor = Color.FromArgb(40, 40, 80);
             lblProfile.BackColor = Color.Transparent;
             yPos += 25;
+
+            txtProfilePictureUrl = new TextBox();
+            txtProfilePictureUrl.Location = new Point(40, yPos);
+            txtProfilePictureUrl.Size = new Size(260, 30);
+            txtProfilePictureUrl.Font = new Font("Segoe UI", 10);
+            txtProfilePictureUrl.BorderStyle = BorderStyle.FixedSingle;
+            txtProfilePictureUrl.PlaceholderText = "Enter image URL (optional)";
+
+            btnLoadImage = new Button();
+            btnLoadImage.Text = "Preview";
+            btnLoadImage.Location = new Point(310, yPos);
+            btnLoadImage.Size = new Size(70, 30);
+            btnLoadImage.Font = new Font("Segoe UI", 9, FontStyle.Bold);
+            btnLoadImage.BackColor = Color.FromArgb(0, 120, 215);
+            btnLoadImage.ForeColor = Color.White;
+            btnLoadImage.FlatStyle = FlatStyle.Flat;
+            btnLoadImage.FlatAppearance.BorderSize = 0;
+            btnLoadImage.Cursor = Cursors.Hand;
+            btnLoadImage.Click += BtnLoadImage_Click;
+            yPos += 40;
 
             picProfile = new PictureBox();
             picProfile.Location = new Point(40, yPos);
             picProfile.Size = new Size(100, 100);
             picProfile.BorderStyle = BorderStyle.FixedSingle;
             picProfile.SizeMode = PictureBoxSizeMode.StretchImage;
-
-            btnSelectImage = new Button();
-            btnSelectImage.Text = "Select Image";
-            btnSelectImage.Location = new Point(160, yPos + 30);
-            btnSelectImage.Size = new Size(120, 35);
-            btnSelectImage.Font = new Font("Segoe UI", 10, FontStyle.Bold);
-            btnSelectImage.BackColor = Color.FromArgb(0, 120, 215);
-            btnSelectImage.ForeColor = Color.White;
-            btnSelectImage.FlatStyle = FlatStyle.Flat;
-            btnSelectImage.FlatAppearance.BorderSize = 0;
-            btnSelectImage.Cursor = Cursors.Hand;
-            btnSelectImage.Click += BtnSelectImage_Click;
+            picProfile.BackColor = Color.LightGray;
             yPos += 120;
 
             // Register Button
@@ -210,75 +219,114 @@ namespace WinFormsApp.Forms
             panel.Controls.AddRange(new Control[] {
                 lblTitle, lblEmail, txtEmail, lblFirstName, txtFirstName,
                 lblLastName, txtLastName, lblStudyLevel, cmbStudyLevel,
-                lblStudyField, cmbStudyField, lblProfile, picProfile,
-                btnSelectImage, btnRegister, btnSkip
+                lblStudyField, cmbStudyField, lblProfile, txtProfilePictureUrl,
+                btnLoadImage, picProfile, btnRegister, btnSkip
             });
             this.Controls.Add(panel);
         }
 
-        private void BtnSelectImage_Click(object sender, EventArgs e)
+        private async void BtnLoadImage_Click(object? sender, EventArgs e)
         {
-            OpenFileDialog openFileDialog = new OpenFileDialog();
-            openFileDialog.Filter = "Image Files|*.jpg;*.jpeg;*.png;*.bmp";
-            if (openFileDialog.ShowDialog() == DialogResult.OK)
+            string imageUrl = txtProfilePictureUrl.Text.Trim();
+            if (string.IsNullOrEmpty(imageUrl))
             {
-                picProfile.Image = Image.FromFile(openFileDialog.FileName);
-                profileImageBytes = File.ReadAllBytes(openFileDialog.FileName);
-            }
-        }
-
-        private void BtnRegister_Click(object sender, EventArgs e)
-        {
-            // Validation
-            if (string.IsNullOrEmpty(txtEmail.Text) || !txtEmail.Text.EndsWith("@ihec.ucar.tn"))
-            {
-                MessageBox.Show("Please enter a valid college email ending with @ihec.ucar.tn", "Validation Error");
+                picProfile.Image = null;
                 return;
             }
 
-            if (string.IsNullOrEmpty(txtFirstName.Text) || string.IsNullOrEmpty(txtLastName.Text))
+            try
             {
-                MessageBox.Show("Please enter both first and last name.", "Validation Error");
-                return;
-            }
-
-            if (cmbStudyLevel.SelectedIndex == -1 || cmbStudyField.SelectedIndex == -1)
-            {
-                MessageBox.Show("Please select both study level and field.", "Validation Error");
-                return;
-            }
-
-            // Register user
-            using (var connection = DatabaseHelper.GetConnection())
-            {
-                connection.Open();
-                string query = @"INSERT INTO Users (Email, FirstName, LastName, StudyLevel, StudyField, ProfilePicture)
-                                VALUES (@email, @firstName, @lastName, @studyLevel, @studyField, @profilePicture)";
-
-                using (var command = new System.Data.SQLite.SQLiteCommand(query, connection))
+                using (var httpClient = new System.Net.Http.HttpClient())
                 {
-                    command.Parameters.AddWithValue("@email", txtEmail.Text);
-                    command.Parameters.AddWithValue("@firstName", txtFirstName.Text);
-                    command.Parameters.AddWithValue("@lastName", txtLastName.Text);
-                    command.Parameters.AddWithValue("@studyLevel", cmbStudyLevel.SelectedItem.ToString());
-                    command.Parameters.AddWithValue("@studyField", cmbStudyField.SelectedItem.ToString());
-                    command.Parameters.AddWithValue("@profilePicture", profileImageBytes);
-
-                    try
+                    byte[] imageBytes = await httpClient.GetByteArrayAsync(imageUrl);
+                    using (var ms = new System.IO.MemoryStream(imageBytes))
                     {
-                        command.ExecuteNonQuery();
-                        MessageBox.Show("Registration successful! You can now login.", "Success");
-                        this.Close();
-                    }
-                    catch (Exception ex)
-                    {
-                        MessageBox.Show("Registration failed: " + ex.Message, "Error");
+                        picProfile.Image = Image.FromStream(ms);
                     }
                 }
             }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Failed to load image from URL: {ex.Message}", "Image Load Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                picProfile.Image = null;
+            }
         }
 
-        private void BtnSkip_Click(object sender, EventArgs e)
+        private void BtnRegister_Click(object? sender, EventArgs e)
+        {
+            try
+            {
+                // Validation
+                if (string.IsNullOrEmpty(txtEmail.Text) || !txtEmail.Text.EndsWith("@ihec.ucar.tn"))
+                {
+                    MessageBox.Show("Please enter a valid college email ending with @ihec.ucar.tn", "Validation Error");
+                    return;
+                }
+
+                if (string.IsNullOrEmpty(txtFirstName.Text) || string.IsNullOrEmpty(txtLastName.Text))
+                {
+                    MessageBox.Show("Please enter both first and last name.", "Validation Error");
+                    return;
+                }
+
+                if (cmbStudyLevel.SelectedIndex == -1 || cmbStudyField.SelectedIndex == -1)
+                {
+                    MessageBox.Show("Please select both study level and field.", "Validation Error");
+                    return;
+                }
+
+                // Check if email already exists
+                using (var connection = DatabaseHelper.GetConnection())
+                {
+                    connection.Open();
+                    
+                    string checkEmailQuery = "SELECT COUNT(*) FROM Users WHERE Email = @email";
+                    using (var checkCommand = new SqlCommand(checkEmailQuery, connection))
+                    {
+                        checkCommand.Parameters.AddWithValue("@email", txtEmail.Text);
+                        int emailCount = (int)checkCommand.ExecuteScalar();
+                        
+                        if (emailCount > 0)
+                        {
+                            MessageBox.Show("This email is already registered. Please use a different email.", "Email Already Exists");
+                            return;
+                        }
+                    }
+
+                    // Register user
+                    string query = @"INSERT INTO Users (Email, FirstName, LastName, StudyLevel, StudyField, ProfilePicture, Password, CreatedDate, IsBlocked, IsAdmin)
+                                    VALUES (@email, @firstName, @lastName, @studyLevel, @studyField, @profilePicture, @password, @createdDate, @isBlocked, @isAdmin)";
+
+                    using (var command = new SqlCommand(query, connection))
+                    {
+                        command.Parameters.AddWithValue("@email", txtEmail.Text);
+                        command.Parameters.AddWithValue("@firstName", txtFirstName.Text);
+                        command.Parameters.AddWithValue("@lastName", txtLastName.Text);
+                        command.Parameters.AddWithValue("@studyLevel", cmbStudyLevel.SelectedItem?.ToString() ?? "");
+                        command.Parameters.AddWithValue("@studyField", cmbStudyField.SelectedItem?.ToString() ?? "");
+                        command.Parameters.AddWithValue("@profilePicture", string.IsNullOrWhiteSpace(txtProfilePictureUrl.Text) ? (object)DBNull.Value : txtProfilePictureUrl.Text.Trim());
+                        command.Parameters.AddWithValue("@password", DatabaseHelper.HashPassword("defaultPassword123"));
+                        command.Parameters.AddWithValue("@createdDate", DateTime.Now);
+                        command.Parameters.AddWithValue("@isBlocked", false);
+                        command.Parameters.AddWithValue("@isAdmin", false);
+
+                        command.ExecuteNonQuery();
+                        MessageBox.Show("Registration successful! You can now login with password: defaultPassword123", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        this.Close();
+                    }
+                }
+            }
+            catch (SqlException sqlEx)
+            {
+                MessageBox.Show($"Database error during registration:\n{sqlEx.Message}", "Database Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Registration failed:\n{ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private void BtnSkip_Click(object? sender, EventArgs e)
         {
             // Create a guest user
             var guestUser = new User
@@ -290,7 +338,8 @@ namespace WinFormsApp.Forms
                 StudyLevel = "N/A",
                 StudyField = "General",
                 IsBlocked = false,
-                IsAdmin = false
+                IsAdmin = false,
+                Password = "" // Required property
             };
             this.Hide();
             StudentDashboard studentForm = new StudentDashboard(guestUser);
@@ -298,4 +347,4 @@ namespace WinFormsApp.Forms
             this.Show();
         }
     }
-} 
+}

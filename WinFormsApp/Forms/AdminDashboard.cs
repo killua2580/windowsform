@@ -3,6 +3,7 @@ using System.Drawing;
 using System.Windows.Forms;
 using WinFormsApp.Models;
 using WinFormsApp.Data;
+using Microsoft.Data.SqlClient;
 
 namespace WinFormsApp.Forms
 {
@@ -105,7 +106,8 @@ namespace WinFormsApp.Forms
                 new ColumnHeader() { Text = "Email", Width = 200 },
                 new ColumnHeader() { Text = "Study Level", Width = 100 },
                 new ColumnHeader() { Text = "Study Field", Width = 120 },
-                new ColumnHeader() { Text = "Status", Width = 80 }
+                new ColumnHeader() { Text = "Status", Width = 80 },
+                new ColumnHeader() { Text = "Created", Width = 100 }
             });
 
             Button btnBlock = new Button();
@@ -114,6 +116,7 @@ namespace WinFormsApp.Forms
             btnBlock.Size = new Size(100, 35);
             btnBlock.BackColor = Color.Red;
             btnBlock.ForeColor = Color.White;
+            btnBlock.Click += (s, e) => ToggleUserStatus(lstUsers, true);
 
             Button btnUnblock = new Button();
             btnUnblock.Text = "Unblock User";
@@ -121,6 +124,7 @@ namespace WinFormsApp.Forms
             btnUnblock.Size = new Size(100, 35);
             btnUnblock.BackColor = Color.Green;
             btnUnblock.ForeColor = Color.White;
+            btnUnblock.Click += (s, e) => ToggleUserStatus(lstUsers, false);
 
             Button btnDelete = new Button();
             btnDelete.Text = "Delete User";
@@ -128,6 +132,7 @@ namespace WinFormsApp.Forms
             btnDelete.Size = new Size(100, 35);
             btnDelete.BackColor = Color.DarkRed;
             btnDelete.ForeColor = Color.White;
+            btnDelete.Click += (s, e) => DeleteUser(lstUsers);
 
             Button btnRefresh = new Button();
             btnRefresh.Text = "Refresh";
@@ -135,8 +140,159 @@ namespace WinFormsApp.Forms
             btnRefresh.Size = new Size(100, 35);
             btnRefresh.BackColor = Color.DodgerBlue;
             btnRefresh.ForeColor = Color.White;
+            btnRefresh.Click += (s, e) => LoadUsers(lstUsers);
 
             tab.Controls.AddRange(new Control[] { lstUsers, btnBlock, btnUnblock, btnDelete, btnRefresh });
+            
+            // Initial load
+            LoadUsers(lstUsers);
+        }
+
+        private void LoadUsers(ListView listView)
+        {
+            listView.Items.Clear();
+            try
+            {
+                using (var connection = DatabaseHelper.GetConnection())
+                {
+                    connection.Open();
+                    string query = "SELECT UserID, FirstName, LastName, Email, StudyLevel, StudyField, IsBlocked, CreatedDate FROM Users ORDER BY LastName, FirstName";
+                    using (var command = new SqlCommand(query, connection))
+                    {
+                        using (var reader = command.ExecuteReader())
+                        {
+                            while (reader.Read())
+                            {
+                                ListViewItem item = new ListViewItem(reader["UserID"].ToString());
+                                item.SubItems.Add($"{reader["FirstName"]} {reader["LastName"]}");
+                                item.SubItems.Add(reader["Email"]?.ToString() ?? "");
+                                item.SubItems.Add(reader["StudyLevel"]?.ToString() ?? "N/A");
+                                item.SubItems.Add(reader["StudyField"]?.ToString() ?? "N/A");
+                                item.SubItems.Add(Convert.ToBoolean(reader["IsBlocked"]) ? "Blocked" : "Active");
+                                item.SubItems.Add(Convert.ToDateTime(reader["CreatedDate"]).ToString("MM/dd/yyyy"));
+                                item.Tag = reader["UserID"];
+                                
+                                // Color blocked users differently
+                                if (Convert.ToBoolean(reader["IsBlocked"]))
+                                {
+                                    item.BackColor = Color.LightCoral;
+                                }
+                                
+                                listView.Items.Add(item);
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error loading users: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private void ToggleUserStatus(ListView listView, bool block)
+        {
+            if (listView.SelectedItems.Count == 0)
+            {
+                MessageBox.Show("Please select a user to modify.", "No Selection", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            var selectedItem = listView.SelectedItems[0];
+            if (selectedItem.Tag != null && int.TryParse(selectedItem.Tag.ToString(), out int userId))
+            {
+                if (userId == currentAdmin.UserID)
+                {
+                    MessageBox.Show("You cannot modify your own account status.", "Invalid Operation", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return;
+                }
+
+                try
+                {
+                    using (var connection = DatabaseHelper.GetConnection())
+                    {
+                        connection.Open();
+                        string query = "UPDATE Users SET IsBlocked = @blocked WHERE UserID = @userId";
+                        using (var command = new SqlCommand(query, connection))
+                        {
+                            command.Parameters.AddWithValue("@blocked", block);
+                            command.Parameters.AddWithValue("@userId", userId);
+                            command.ExecuteNonQuery();
+                        }
+                    }
+                    
+                    string action = block ? "blocked" : "unblocked";
+                    MessageBox.Show($"User {action} successfully!", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    LoadUsers(listView);
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Error updating user status: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+            }
+        }
+
+        private void DeleteUser(ListView listView)
+        {
+            if (listView.SelectedItems.Count == 0)
+            {
+                MessageBox.Show("Please select a user to delete.", "No Selection", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            var selectedItem = listView.SelectedItems[0];
+            if (selectedItem.Tag != null && int.TryParse(selectedItem.Tag.ToString(), out int userId))
+            {
+                if (userId == currentAdmin.UserID)
+                {
+                    MessageBox.Show("You cannot delete your own account.", "Invalid Operation", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return;
+                }
+
+                var result = MessageBox.Show("Are you sure you want to delete this user? This action cannot be undone.", 
+                    "Confirm Delete", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+                
+                if (result == DialogResult.Yes)
+                {
+                    try
+                    {
+                        using (var connection = DatabaseHelper.GetConnection())
+                        {
+                            connection.Open();
+                            
+                            // Delete related records first (to avoid foreign key constraints)
+                            string deleteLikes = "DELETE FROM Likes WHERE UserID = @userId";
+                            using (var command = new SqlCommand(deleteLikes, connection))
+                            {
+                                command.Parameters.AddWithValue("@userId", userId);
+                                command.ExecuteNonQuery();
+                            }
+                            
+                            string deleteReservations = "DELETE FROM Reservations WHERE UserID = @userId";
+                            using (var command = new SqlCommand(deleteReservations, connection))
+                            {
+                                command.Parameters.AddWithValue("@userId", userId);
+                                command.ExecuteNonQuery();
+                            }
+                            
+                            // Delete the user
+                            string deleteUser = "DELETE FROM Users WHERE UserID = @userId";
+                            using (var command = new SqlCommand(deleteUser, connection))
+                            {
+                                command.Parameters.AddWithValue("@userId", userId);
+                                command.ExecuteNonQuery();
+                            }
+                        }
+                        
+                        MessageBox.Show("User deleted successfully!", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        LoadUsers(listView);
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show($"Error deleting user: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    }
+                }
+            }
         }
 
         private void CreateBooksTab(TabPage tab)
@@ -145,7 +301,7 @@ namespace WinFormsApp.Forms
             GroupBox grpAddBook = new GroupBox();
             grpAddBook.Text = "Add New Book";
             grpAddBook.Location = new Point(20, 20);
-            grpAddBook.Size = new Size(400, 300);
+            grpAddBook.Size = new Size(400, 350);
 
             Label lblTitle = new Label();
             lblTitle.Text = "Title:";
@@ -194,13 +350,23 @@ namespace WinFormsApp.Forms
             cmbField.Size = new Size(300, 25);
             cmbField.DropDownStyle = ComboBoxStyle.DropDownList;
 
+            Label lblCover = new Label();
+            lblCover.Text = "Cover URL:";
+            lblCover.Location = new Point(15, 205);
+            lblCover.Size = new Size(60, 20);
+
+            TextBox txtCoverUrl = new TextBox();
+            txtCoverUrl.Location = new Point(80, 203);
+            txtCoverUrl.Size = new Size(300, 25);
+            txtCoverUrl.PlaceholderText = "Enter cover image URL (optional)";
+
             Label lblCount = new Label();
             lblCount.Text = "Count:";
-            lblCount.Location = new Point(15, 205);
+            lblCount.Location = new Point(15, 240);
             lblCount.Size = new Size(60, 20);
 
             NumericUpDown numCount = new NumericUpDown();
-            numCount.Location = new Point(80, 203);
+            numCount.Location = new Point(80, 238);
             numCount.Size = new Size(100, 25);
             numCount.Minimum = 1;
             numCount.Maximum = 100;
@@ -208,16 +374,17 @@ namespace WinFormsApp.Forms
 
             Button btnAddBook = new Button();
             btnAddBook.Text = "Add Book";
-            btnAddBook.Location = new Point(80, 250);
+            btnAddBook.Location = new Point(80, 285);
             btnAddBook.Size = new Size(120, 35);
             btnAddBook.BackColor = Color.Green;
             btnAddBook.ForeColor = Color.White;
             btnAddBook.Click += (s, e) => AddBook(txtTitle.Text, txtAuthor.Text, txtISBN.Text, 
-                txtCategory.Text, cmbField.SelectedItem?.ToString(), (int)numCount.Value);
+                txtCategory.Text, cmbField.SelectedItem?.ToString(), txtCoverUrl.Text, (int)numCount.Value);
 
             grpAddBook.Controls.AddRange(new Control[] {
                 lblTitle, txtTitle, lblAuthor, txtAuthor, lblISBN, txtISBN,
-                lblCategory, txtCategory, lblField, cmbField, lblCount, numCount, btnAddBook
+                lblCategory, txtCategory, lblField, cmbField, lblCover, txtCoverUrl, 
+                lblCount, numCount, btnAddBook
             });
 
             // Books List
@@ -258,7 +425,7 @@ namespace WinFormsApp.Forms
             LoadBooks(lstBooks);
         }
 
-        private void AddBook(string title, string author, string isbn, string category, string field, int count)
+        private void AddBook(string title, string author, string isbn, string category, string? field, string coverUrl, int count)
         {
             if (string.IsNullOrEmpty(title) || string.IsNullOrEmpty(author))
             {
@@ -269,16 +436,17 @@ namespace WinFormsApp.Forms
             using (var connection = DatabaseHelper.GetConnection())
             {
                 connection.Open();
-                string query = @"INSERT INTO Books (Title, Author, ISBN, Category, StudyField, AvailableCount, TotalCount)
-                                VALUES (@title, @author, @isbn, @category, @field, @count, @count)";
+                string query = @"INSERT INTO Books (Title, Author, ISBN, Category, StudyField, CoverImage, AvailableCount, TotalCount)
+                                VALUES (@title, @author, @isbn, @category, @field, @cover, @count, @count)";
 
-                using (var command = new System.Data.SQLite.SQLiteCommand(query, connection))
+                using (var command = new SqlCommand(query, connection))
                 {
                     command.Parameters.AddWithValue("@title", title);
                     command.Parameters.AddWithValue("@author", author);
                     command.Parameters.AddWithValue("@isbn", isbn ?? "");
                     command.Parameters.AddWithValue("@category", category ?? "");
                     command.Parameters.AddWithValue("@field", field ?? "General");
+                    command.Parameters.AddWithValue("@cover", string.IsNullOrWhiteSpace(coverUrl) ? (object)DBNull.Value : coverUrl.Trim());
                     command.Parameters.AddWithValue("@count", count);
 
                     try
@@ -301,17 +469,17 @@ namespace WinFormsApp.Forms
             {
                 connection.Open();
                 string query = "SELECT * FROM Books ORDER BY Title";
-                using (var command = new System.Data.SQLite.SQLiteCommand(query, connection))
+                using (var command = new SqlCommand(query, connection))
                 {
                     using (var reader = command.ExecuteReader())
                     {
                         while (reader.Read())
                         {
                             ListViewItem item = new ListViewItem(reader["BookID"].ToString());
-                            item.SubItems.Add(reader["Title"].ToString());
-                            item.SubItems.Add(reader["Author"].ToString());
-                            item.SubItems.Add(reader["Category"].ToString());
-                            item.SubItems.Add(reader["StudyField"].ToString());
+                            item.SubItems.Add(reader["Title"]?.ToString() ?? "");
+                            item.SubItems.Add(reader["Author"]?.ToString() ?? "");
+                            item.SubItems.Add(reader["Category"]?.ToString() ?? "");
+                            item.SubItems.Add(reader["StudyField"]?.ToString() ?? "");
                             item.SubItems.Add(reader["AvailableCount"].ToString());
                             item.SubItems.Add(reader["TotalCount"].ToString());
                             listView.Items.Add(item);
@@ -321,4 +489,4 @@ namespace WinFormsApp.Forms
             }
         }
     }
-} 
+}

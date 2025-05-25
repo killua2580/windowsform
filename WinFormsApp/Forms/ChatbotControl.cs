@@ -10,9 +10,9 @@ namespace WinFormsApp.Forms
 {
     public partial class ChatbotControl : UserControl
     {
-        private TextBox txtMessage;
-        private RichTextBox rtbChat;
-        private Button btnSend;
+        private TextBox txtMessage = null!;
+        private RichTextBox rtbChat = null!;
+        private Button btnSend = null!;
         private User currentUser;
 
         public ChatbotControl(User user)
@@ -53,7 +53,7 @@ namespace WinFormsApp.Forms
             AddMessage("Bot", "Hello! I'm your library assistant. Ask me about books, availability, or recommendations!");
         }
 
-        private void TxtMessage_KeyPress(object sender, KeyPressEventArgs e)
+        private void TxtMessage_KeyPress(object? sender, KeyPressEventArgs e)
         {
             if (e.KeyChar == (char)Keys.Enter)
             {
@@ -62,7 +62,7 @@ namespace WinFormsApp.Forms
             }
         }
 
-        private void BtnSend_Click(object sender, EventArgs e)
+        private void BtnSend_Click(object? sender, EventArgs e)
         {
             SendMessage();
         }
@@ -134,4 +134,4 @@ namespace WinFormsApp.Forms
             rtbChat.ScrollToCaret();
         }
     }
-} 
+}

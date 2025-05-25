@@ -2,6 +2,7 @@ using System;
 using System.Windows.Forms;
 using WinFormsApp.Data;
 using WinFormsApp.Forms;
+using Microsoft.Data.SqlClient;
 
 namespace WinFormsApp
 {
@@ -26,7 +27,7 @@ namespace WinFormsApp
                 connection.Open();
                 // Check if books already exist
                 string checkQuery = "SELECT COUNT(*) FROM Books";
-                using (var command = new System.Data.SQLite.SQLiteCommand(checkQuery, connection))
+                using (var command = new SqlCommand(checkQuery, connection))
                 {
                     int count = Convert.ToInt32(command.ExecuteScalar());
                     if (count > 0) return; // Books already added
@@ -47,7 +48,7 @@ namespace WinFormsApp
                                      VALUES (@title, @author, @category, @field, @count, @count)";
                 foreach (var book in sampleBooks)
                 {
-                    using (var command = new System.Data.SQLite.SQLiteCommand(insertQuery, connection))
+                    using (var command = new SqlCommand(insertQuery, connection))
                     {
                         command.Parameters.AddWithValue("@title", book.Title);
                         command.Parameters.AddWithValue("@author", book.Author);
