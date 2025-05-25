@@ -221,9 +221,7 @@ namespace WinFormsApp.Forms
             ChatbotControl chatbot = new ChatbotControl(currentUser);
             chatbot.Dock = DockStyle.Fill;
             tab.Controls.Add(chatbot);
-        }
-
-        private void LoadRecommendedBooks()
+        }        private void LoadRecommendedBooks()
         {
             if (lstRecommended == null) return;
 
@@ -233,25 +231,81 @@ namespace WinFormsApp.Forms
                 using (var connection = DatabaseHelper.GetConnection())
                 {
                     connection.Open();
-                    string query = @"SELECT TOP 10 BookID, Title, Author, Category, StudyField, AvailableCount, TotalCount 
-                                   FROM Books 
-                                   WHERE AvailableCount > 0 AND (StudyField = @field OR StudyField = 'General')
-                                   ORDER BY AvailableCount DESC";
+                    
+                    // Enhanced recommendation query that prioritizes liked books
+                    string query = @"
+                        WITH RecommendedBooks AS (
+                            -- First priority: Books liked by the user that are available
+                            SELECT DISTINCT b.BookID, b.Title, b.Author, b.Category, b.StudyField, 
+                                   b.AvailableCount, b.TotalCount, 1 as Priority, 'Liked by you' as ReasonText
+                            FROM Books b
+                            INNER JOIN Likes l ON b.BookID = l.BookID
+                            WHERE l.UserID = @userId AND b.AvailableCount > 0
+                            
+                            UNION ALL
+                            
+                            -- Second priority: Books from same category as liked books
+                            SELECT DISTINCT b.BookID, b.Title, b.Author, b.Category, b.StudyField, 
+                                   b.AvailableCount, b.TotalCount, 2 as Priority, 'Similar to liked books' as ReasonText
+                            FROM Books b
+                            WHERE b.AvailableCount > 0 
+                            AND b.Category IN (
+                                SELECT DISTINCT b2.Category 
+                                FROM Books b2 
+                                INNER JOIN Likes l ON b2.BookID = l.BookID 
+                                WHERE l.UserID = @userId
+                            )
+                            AND b.BookID NOT IN (
+                                SELECT l2.BookID FROM Likes l2 WHERE l2.UserID = @userId
+                            )
+                            
+                            UNION ALL
+                            
+                            -- Third priority: Books from user's study field
+                            SELECT DISTINCT b.BookID, b.Title, b.Author, b.Category, b.StudyField, 
+                                   b.AvailableCount, b.TotalCount, 3 as Priority, 'Matches your field' as ReasonText
+                            FROM Books b
+                            WHERE b.AvailableCount > 0 
+                            AND (b.StudyField = @field OR b.StudyField = 'General')
+                            AND b.BookID NOT IN (
+                                SELECT l.BookID FROM Likes l WHERE l.UserID = @userId
+                            )
+                            AND b.Category NOT IN (
+                                SELECT DISTINCT b2.Category 
+                                FROM Books b2 
+                                INNER JOIN Likes l ON b2.BookID = l.BookID 
+                                WHERE l.UserID = @userId
+                            )
+                        )
+                        SELECT TOP 10 BookID, Title, Author, Category, StudyField, AvailableCount, TotalCount, ReasonText
+                        FROM RecommendedBooks
+                        ORDER BY Priority, AvailableCount DESC";
                     
                     using (var command = new SqlCommand(query, connection))
                     {
+                        command.Parameters.AddWithValue("@userId", currentUser.UserID);
                         command.Parameters.AddWithValue("@field", currentUser.StudyField ?? "General");
                         
                         using (var reader = command.ExecuteReader())
                         {
                             while (reader.Read())
                             {
-                                ListViewItem item = new ListViewItem(reader["Title"]?.ToString() ?? "");
+                                string reasonText = reader["ReasonText"]?.ToString() ?? "";
+                                string title = reader["Title"]?.ToString() ?? "";
+                                
+                                // Add visual indicator for different recommendation types
+                                if (reasonText == "Liked by you")
+                                    title = "❤️ " + title;
+                                else if (reasonText == "Similar to liked books")
+                                    title = "📚 " + title;
+                                
+                                ListViewItem item = new ListViewItem(title);
                                 item.SubItems.Add(reader["Author"]?.ToString() ?? "");
                                 item.SubItems.Add(reader["Category"]?.ToString() ?? "");
                                 item.SubItems.Add(reader["AvailableCount"].ToString());
                                 item.SubItems.Add(reader["StudyField"]?.ToString() ?? "");
                                 item.Tag = reader["BookID"];
+                                item.ToolTipText = reasonText; // Show recommendation reason in tooltip
                                 lstRecommended.Items.Add(item);
                             }
                         }
@@ -483,6 +537,7 @@ namespace WinFormsApp.Forms
                                     }
                                     
                                     MessageBox.Show("Book liked successfully!", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                                    LoadRecommendedBooks(); // Refresh recommendations to include newly liked book
                                 }
                                 else
                                 {
