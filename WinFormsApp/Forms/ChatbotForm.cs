@@ -5,7 +5,6 @@ using WinFormsApp.Models;
 using WinFormsApp.Data;
 using System.Collections.Generic;
 using System.Net.Http;
-using System.Net.Http.Headers;
 using System.Threading.Tasks;
 using Microsoft.Data.SqlClient;
 
@@ -70,9 +69,7 @@ namespace WinFormsApp.Forms
         private void BtnSend_Click(object? sender, EventArgs e)
         {
             SendMessage();
-        }
-
-        private async void SendMessage()
+        }        private async void SendMessage()
         {
             string message = txtMessage.Text.Trim();
             if (string.IsNullOrEmpty(message)) return;
@@ -80,45 +77,70 @@ namespace WinFormsApp.Forms
             AddMessage("You", message);
             txtMessage.Clear();
 
-            // Call Gemini API for response
+            // Try Gemini API first, fallback to local responses
             string response = await GetGeminiResponseAsync(message);
+            if (response.Contains("Please configure a valid Google Gemini API key"))
+            {
+                response = ProcessMessageLocally(message);
+            }
             AddMessage("Bot", response);
-        }
-
-        private async Task<string> GetGeminiResponseAsync(string userMessage)
+        }private async Task<string> GetGeminiResponseAsync(string userMessage)
         {
-            // NEVER hardcode API keys in production!
-            string apiKey = "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";
-            string apiUrl = "https://openrouter.ai/api/v1/chat/completions";
-            string prompt = $"You are a helpful library assistant. Answer questions about book availability and library services. User: {userMessage}";
+            // TODO: Replace with your valid Google Gemini API key
+            string apiKey = "YOUR_VALID_GEMINI_API_KEY_HERE";
+            
+            if (apiKey == "YOUR_VALID_GEMINI_API_KEY_HERE")
+            {
+                return "Please configure a valid Google Gemini API key. Go to https://makersuite.google.com/app/apikey to get your API key, then update the code.";
+            }
+            
+            string apiUrl = $"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={apiKey}";
+            
+            // Create a context-aware prompt for the library assistant
+            string prompt = $"You are a helpful library assistant for IHEC University library. Answer questions about books, library services, reservations, and study recommendations. Keep responses concise and helpful. User question: {userMessage}";
 
             using (var client = new HttpClient())
-            {
-                client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
-                client.DefaultRequestHeaders.Add("HTTP-Referer", "https://your-app-domain.com");
-                client.DefaultRequestHeaders.Add("X-Title", "IHEC Library Chatbot");
-
-                var requestBody = new
+            {                var requestBody = new
                 {
-                    model = "google/gemini-pro",
-                    messages = new[] {
-                        new { role = "user", content = prompt }
+                    contents = new[]
+                    {
+                        new
+                        {
+                            parts = new[]
+                            {
+                                new { text = prompt }
+                            }
+                        }
+                    },
+                    generationConfig = new
+                    {
+                        temperature = 0.7,
+                        maxOutputTokens = 1000
                     }
                 };
-                var json = System.Text.Json.JsonSerializer.Serialize(requestBody);
-                var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
 
-                try
+                var json = System.Text.Json.JsonSerializer.Serialize(requestBody);
+                var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");                try
                 {
                     var response = await client.PostAsync(apiUrl, content);
-                    response.EnsureSuccessStatusCode();
                     var responseString = await response.Content.ReadAsStringAsync();
-                    using var doc = System.Text.Json.JsonDocument.Parse(responseString);
-                    var choices = doc.RootElement.GetProperty("choices");
-                    if (choices.GetArrayLength() > 0)
+                    
+                    if (!response.IsSuccessStatusCode)
                     {
-                        var msg = choices[0].GetProperty("message").GetProperty("content").GetString();
-                        return msg ?? "(No response from Gemini)";
+                        return $"API Error ({response.StatusCode}): {responseString}";
+                    }
+                    
+                    using var doc = System.Text.Json.JsonDocument.Parse(responseString);
+                    
+                    var candidates = doc.RootElement.GetProperty("candidates");
+                    if (candidates.GetArrayLength() > 0)
+                    {
+                        var content_part = candidates[0].GetProperty("content").GetProperty("parts");
+                        if (content_part.GetArrayLength() > 0)
+                        {
+                            var text = content_part[0].GetProperty("text").GetString();
+                            return text ?? "(No response from Gemini)";
+                        }
                     }
                     return "(No response from Gemini)";
                 }
@@ -127,9 +149,7 @@ namespace WinFormsApp.Forms
                     return $"Error contacting Gemini API: {ex.Message}";
                 }
             }
-        }
-
-        private void AddMessage(string sender, string message)
+        }        private void AddMessage(string sender, string message)
         {
             rtbChat.SelectionColor = sender == "You" ? Color.Blue : Color.Green;
             rtbChat.SelectionFont = new Font(rtbChat.Font, FontStyle.Bold);
@@ -142,7 +162,7 @@ namespace WinFormsApp.Forms
             rtbChat.ScrollToCaret();
         }
 
-        private string ProcessMessage(string message)
+        private string ProcessMessageLocally(string message)
         {
             message = message.ToLower();
 
@@ -173,7 +193,7 @@ namespace WinFormsApp.Forms
             }
             else
             {
-                return "I'm here to help with library-related questions. Try asking about book recommendations, availability, or reservations!";
+                return "I'm here to help with library-related questions. Try asking about book recommendations, availability, or reservations!\n\nNote: For enhanced AI responses, please configure a valid Google Gemini API key.";
             }
         }
 
@@ -181,30 +201,36 @@ namespace WinFormsApp.Forms
         {
             List<string> recommendations = new List<string>();
             
-            using (var connection = DatabaseHelper.GetConnection())
+            try
             {
-                connection.Open();
-                string query = "SELECT TOP 3 Title, Author FROM Books WHERE StudyField = @field OR StudyField = 'General'";
-                using (var command = new SqlCommand(query, connection))
+                using (var connection = DatabaseHelper.GetConnection())
                 {
-                    command.Parameters.AddWithValue("@field", currentUser.StudyField ?? "General");
-                    using (var reader = command.ExecuteReader())
+                    connection.Open();
+                    string query = "SELECT TOP 3 Title, Author FROM Books WHERE StudyField = @field OR StudyField = 'General'";
+                    using (var command = new SqlCommand(query, connection))
                     {
-                        while (reader.Read())
+                        command.Parameters.AddWithValue("@field", currentUser.StudyField ?? "General");
+                        using (var reader = command.ExecuteReader())
                         {
-                            recommendations.Add($"• {reader["Title"]} by {reader["Author"]}");
+                            while (reader.Read())
+                            {
+                                recommendations.Add($"• {reader["Title"]} by {reader["Author"]}");
+                            }
                         }
                     }
                 }
-            }
 
-            if (recommendations.Count > 0)
+                if (recommendations.Count > 0)
+                {
+                    return $"Based on your field ({currentUser.StudyField}), I recommend:\n\n" + string.Join("\n", recommendations);
+                }
+                else
+                {
+                    return "I don't have specific recommendations for your field right now, but check the Library tab for all available books!";
+                }
+            }            catch (Exception)
             {
-                return $"Based on your field ({currentUser.StudyField}), I recommend:\n\n" + string.Join("\n", recommendations);
-            }
-            else
-            {
-                return "I don't have specific recommendations for your field right now, but check the Library tab for all available books!";
+                return "Sorry, I couldn't fetch recommendations at the moment. Please try again later.";
             }
         }
     }

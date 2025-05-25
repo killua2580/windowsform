@@ -1,0 +1,33 @@
+How to Set Up Google Gemini API Key for Chatbot
+===============================================
+
+The chatbot is currently configured with a placeholder API key. To enable AI-powered responses, follow these steps:
+
+1. GET YOUR API KEY:
+   - Go to https://makersuite.google.com/app/apikey
+   - Sign in with your Google account
+   - Click "Create API key"
+   - Copy the generated API key
+
+2. UPDATE THE CODE:
+   - Open ChatbotForm.cs
+   - Find the line: string apiKey = "YOUR_VALID_GEMINI_API_KEY_HERE";
+   - Replace "YOUR_VALID_GEMINI_API_KEY_HERE" with your actual API key
+   
+   - Open ChatbotControl.cs
+   - Find the same line and replace it with your API key
+
+3. EXAMPLE:
+   Before: string apiKey = "YOUR_VALID_GEMINI_API_KEY_HERE";
+   After:  string apiKey = "AIzaSyABCDEFGHIJKLMNOPQRSTUVWXYZ1234567";
+
+4. SECURITY NOTE:
+   - Never commit your API key to version control
+   - Consider using environment variables or config files for production
+
+5. FALLBACK MODE:
+   - The chatbot will work with basic responses even without a valid API key
+   - Users will see helpful library-related responses for common questions
+   - Once a valid API key is configured, responses will be powered by Google Gemini AI
+
+Current Status: Using local fallback responses (no valid API key configured)

@@ -3,7 +3,6 @@ using System.Drawing;
 using System.Windows.Forms;
 using WinFormsApp.Models;
 using System.Net.Http;
-using System.Net.Http.Headers;
 using System.Threading.Tasks;
 
 namespace WinFormsApp.Forms
@@ -65,9 +64,7 @@ namespace WinFormsApp.Forms
         private void BtnSend_Click(object? sender, EventArgs e)
         {
             SendMessage();
-        }
-
-        private async void SendMessage()
+        }        private async void SendMessage()
         {
             string message = txtMessage.Text.Trim();
             if (string.IsNullOrEmpty(message)) return;
@@ -75,44 +72,70 @@ namespace WinFormsApp.Forms
             AddMessage("You", message);
             txtMessage.Clear();
 
-            // Call Gemini API for response
+            // Try Gemini API first, fallback to local responses
             string response = await GetGeminiResponseAsync(message);
+            if (response.Contains("Please configure a valid Google Gemini API key"))
+            {
+                response = ProcessMessageLocally(message);
+            }
             AddMessage("Bot", response);
-        }
-
-        private async Task<string> GetGeminiResponseAsync(string userMessage)
+        }private async Task<string> GetGeminiResponseAsync(string userMessage)
         {
-            // NEVER hardcode API keys in production!
-            string apiKey = "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";
-            string apiUrl = "https://openrouter.ai/api/v1/chat/completions";
+            // TODO: Replace with your valid Google Gemini API key
+            string apiKey = "YOUR_VALID_GEMINI_API_KEY_HERE";
+            
+            if (apiKey == "YOUR_VALID_GEMINI_API_KEY_HERE")
+            {
+                return "Please configure a valid Google Gemini API key. Go to https://makersuite.google.com/app/apikey to get your API key, then update the code.";
+            }
+            
+            string apiUrl = $"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={apiKey}";
+            
+            // Create a context-aware prompt for the library assistant
+            string prompt = $"You are a helpful library assistant for IHEC University library. Answer questions about books, library services, reservations, and study recommendations. Keep responses concise and helpful. User question: {userMessage}";
 
             using (var client = new HttpClient())
-            {
-                client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
-                client.DefaultRequestHeaders.Add("HTTP-Referer", "https://ihec-library.local");
-                client.DefaultRequestHeaders.Add("X-Title", "IHEC Library Chatbot");
-
-                var requestBody = new
+            {                var requestBody = new
                 {
-                    model = "google/gemini-pro",
-                    messages = new[] {
-                        new { role = "user", content = userMessage }
+                    contents = new[]
+                    {
+                        new
+                        {
+                            parts = new[]
+                            {
+                                new { text = prompt }
+                            }
+                        }
+                    },
+                    generationConfig = new
+                    {
+                        temperature = 0.7,
+                        maxOutputTokens = 1000
                     }
                 };
-                var json = System.Text.Json.JsonSerializer.Serialize(requestBody);
-                var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
 
-                try
+                var json = System.Text.Json.JsonSerializer.Serialize(requestBody);
+                var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");                try
                 {
                     var response = await client.PostAsync(apiUrl, content);
-                    response.EnsureSuccessStatusCode();
                     var responseString = await response.Content.ReadAsStringAsync();
-                    using var doc = System.Text.Json.JsonDocument.Parse(responseString);
-                    var choices = doc.RootElement.GetProperty("choices");
-                    if (choices.GetArrayLength() > 0)
+                    
+                    if (!response.IsSuccessStatusCode)
                     {
-                        var msg = choices[0].GetProperty("message").GetProperty("content").GetString();
-                        return msg ?? "(No response from Gemini)";
+                        return $"API Error ({response.StatusCode}): {responseString}";
+                    }
+                    
+                    using var doc = System.Text.Json.JsonDocument.Parse(responseString);
+                    
+                    var candidates = doc.RootElement.GetProperty("candidates");
+                    if (candidates.GetArrayLength() > 0)
+                    {
+                        var content_part = candidates[0].GetProperty("content").GetProperty("parts");
+                        if (content_part.GetArrayLength() > 0)
+                        {
+                            var text = content_part[0].GetProperty("text").GetString();
+                            return text ?? "(No response from Gemini)";
+                        }
                     }
                     return "(No response from Gemini)";
                 }
@@ -132,6 +155,41 @@ namespace WinFormsApp.Forms
             rtbChat.SelectionFont = new Font(rtbChat.Font, FontStyle.Regular);
             rtbChat.AppendText($"{message}\n\n");
             rtbChat.ScrollToCaret();
+        }
+
+        private string ProcessMessageLocally(string message)
+        {
+            message = message.ToLower();
+
+            // Simple keyword-based responses
+            if (message.Contains("recommend") || message.Contains("suggestion"))
+            {
+                return "I can recommend books based on your study field. Please check the Library tab for available books in your area of study.";
+            }
+            else if (message.Contains("available") || message.Contains("availability"))
+            {
+                return "Please specify which book you're looking for, and I'll check its availability.";
+            }
+            else if (message.Contains("reserve") || message.Contains("reservation"))
+            {
+                return "To reserve a book, go to the Library tab, select the book you want, and click 'Reserve Selected'.";
+            }
+            else if (message.Contains("profile") || message.Contains("account"))
+            {
+                return "You can view and edit your profile information in the Profile tab.";
+            }
+            else if (message.Contains("help"))
+            {
+                return "I can help you with:\n- Book recommendations\n- Checking availability\n- Reservation instructions\n- Navigation help\n\nWhat would you like to know?";
+            }
+            else if (message.Contains("hello") || message.Contains("hi"))
+            {
+                return $"Hello! How can I assist you with the library today?";
+            }
+            else
+            {
+                return "I'm here to help with library-related questions. Try asking about book recommendations, availability, or reservations!\n\nNote: For enhanced AI responses, please configure a valid Google Gemini API key.";
+            }
         }
     }
 }
