@@ -138,9 +138,7 @@ namespace WinFormsApp.Forms
                 lblTitle, lblEmail, txtEmail, lblPassword, txtPassword, btnLogin, btnRegister, btnSkip
             });
             this.Controls.Add(panel);
-        }
-
-        private void BtnLogin_Click(object? sender, EventArgs e)
+        }        private void BtnLogin_Click(object? sender, EventArgs e)
         {
             string email = txtEmail.Text.Trim();
             string password = txtPassword.Text;
@@ -151,76 +149,34 @@ namespace WinFormsApp.Forms
                 return;
             }
 
-            // Debug: Show what we're trying to authenticate
             try
             {
-                using (var connection = DatabaseHelper.GetConnection())
+                User? user = AuthenticateUser(email, password);
+                if (user != null)
                 {
-                    connection.Open();
-                    
-                    // First, let's check if the user exists at all
-                    string checkUserQuery = "SELECT UserID, Email, FirstName, LastName, Password, IsBlocked, IsAdmin FROM Users WHERE Email = @email";
-                    using (var checkCommand = new SqlCommand(checkUserQuery, connection))
+                    if (user.IsBlocked)
                     {
-                        checkCommand.Parameters.AddWithValue("@email", email);
-                        using (var reader = checkCommand.ExecuteReader())
-                        {
-                            if (reader.Read())
-                            {
-                                string storedPassword = reader["Password"]?.ToString() ?? "";
-                                bool isBlocked = Convert.ToBoolean(reader["IsBlocked"]);
-                                bool isAdmin = Convert.ToBoolean(reader["IsAdmin"]);
-                                string firstName = reader["FirstName"]?.ToString() ?? "";
-                                
-                                reader.Close();
-                                
-                                // Debug information
-                                string debugInfo = $"User found: {firstName}\n";
-                                debugInfo += $"Stored password length: {storedPassword.Length}\n";
-                                debugInfo += $"Entered password: {password}\n";
-                                debugInfo += $"Hashed entered password: {DatabaseHelper.HashPassword(password)}\n";
-                                debugInfo += $"Password match (plain): {storedPassword == password}\n";
-                                debugInfo += $"Password match (hashed): {storedPassword == DatabaseHelper.HashPassword(password)}\n";
-                                debugInfo += $"Is Admin: {isAdmin}\n";
-                                debugInfo += $"Is Blocked: {isBlocked}";
-                                
-                                MessageBox.Show(debugInfo, "Debug Info", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                                
-                                // Try authentication
-                                User? user = AuthenticateUser(email, password);
-                                if (user != null)
-                                {
-                                    if (user.IsBlocked)
-                                    {
-                                        MessageBox.Show("Your account has been blocked. Please contact administration.", "Access Denied", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                                        return;
-                                    }
-
-                                    this.Hide();
-                                    if (user.IsAdmin)
-                                    {
-                                        AdminDashboard adminForm = new AdminDashboard(user);
-                                        adminForm.ShowDialog();
-                                    }
-                                    else
-                                    {
-                                        StudentDashboard studentForm = new StudentDashboard(user);
-                                        studentForm.ShowDialog();
-                                    }
-                                    this.Show();
-                                    txtPassword.Clear();
-                                }
-                                else
-                                {
-                                    MessageBox.Show("Authentication failed - password mismatch.", "Login Failed", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                                }
-                            }
-                            else
-                            {
-                                MessageBox.Show($"No user found with email: {email}", "User Not Found", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                            }
-                        }
+                        MessageBox.Show("Your account has been blocked. Please contact administration.", "Access Denied", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                        return;
                     }
+
+                    this.Hide();
+                    if (user.IsAdmin)
+                    {
+                        AdminDashboard adminForm = new AdminDashboard(user);
+                        adminForm.ShowDialog();
+                    }
+                    else
+                    {
+                        StudentDashboard studentForm = new StudentDashboard(user);
+                        studentForm.ShowDialog();
+                    }
+                    this.Show();
+                    txtPassword.Clear();
+                }
+                else
+                {
+                    MessageBox.Show("Invalid email or password.", "Login Failed", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
             }
             catch (Exception ex)

@@ -13,10 +13,14 @@ namespace WinFormsApp
         {
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
+            
             // Initialize database
-            DatabaseHelper.InitializeDatabase();
-            // Add some sample books
+            DatabaseHelper.InitializeDatabase();            // Add some sample books
             AddSampleBooks();
+            
+            // Uncomment the line below to test password finding
+            // TestPasswordFinder();
+            
             Application.Run(new LoginForm());
         }
 
@@ -59,6 +63,42 @@ namespace WinFormsApp
                     }
                 }
             }
+        }        static void TestPasswordFinder()
+        {
+            Console.WriteLine("Testing password hashes from database:");
+            
+            // Test both hashes from the database
+            string hash1 = "ef92b778bafe771e89245b89ecbc08a44a4e166c0665991188181f383d4473e94f"; // john.doe
+            string hash2 = "36e47dd992c4e177ba3e3c0b493f1a05036a05e62b17e2560aafab6d8a6695817"; // slim
+            
+            Console.WriteLine($"Hash 1 (john.doe): {hash1}");
+            Console.WriteLine($"Hash 2 (slim): {hash2}");
+            Console.WriteLine();
+            
+            Console.WriteLine("Testing hash 1 (john.doe@ihec.ucar.tn):");
+            string? foundPassword1 = PasswordTester.FindPassword(hash1);
+            if (foundPassword1 != null)
+            {
+                Console.WriteLine($"Found password for john.doe: {foundPassword1}");
+            }
+            else
+            {
+                Console.WriteLine("Password not found for john.doe");
+            }
+            
+            Console.WriteLine("\nTesting hash 2 (slim@ihec.ucar.tn):");
+            string? foundPassword2 = PasswordTester.FindPassword(hash2);
+            if (foundPassword2 != null)
+            {
+                Console.WriteLine($"Found password for slim: {foundPassword2}");
+            }
+            else
+            {
+                Console.WriteLine("Password not found for slim");
+            }
+            
+            Console.WriteLine("\nPress any key to continue...");
+            Console.ReadKey();
         }
     }
 }

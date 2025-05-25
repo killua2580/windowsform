@@ -80,13 +80,11 @@ namespace WinFormsApp.Data
                               WHERE TABLE_NAME = 'Users' AND COLUMN_NAME = 'Password')
                 BEGIN
                     ALTER TABLE Users ADD Password nvarchar(255) NOT NULL DEFAULT 'defaultPassword123'
-                END";
-
-            // Update existing users without passwords
+                END";            // Update existing users without passwords or with old hash format
             string updateExistingPasswords = @"
                 UPDATE Users 
-                SET Password = 'f1e4c2b9c9e6af47c0c9a5b8e9c6b5f3b1c9d8a7e6f3c5b8a0c9e6f3c1b5d8a7e6f3c5b8a9c6e3f1b5d8a7e6f3c5b8a9c6e3f1b5d8a7e6f3c5b8a9c6'
-                WHERE Password = 'defaultPassword123' OR Password IS NULL";
+                SET Password = @defaultHashedPassword
+                WHERE Password = 'defaultPassword123' OR Password IS NULL OR LEN(Password) >= 64";
 
             string createReservationsTable = @"
                 IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='Reservations' AND xtype='U')
@@ -130,10 +128,12 @@ namespace WinFormsApp.Data
                 // Add Password column to existing table if needed
                 using (var command = new SqlCommand(addPasswordColumn, connection))
                     command.ExecuteNonQuery();
-                
-                // Update existing users with hashed default password
+                  // Update existing users with hashed default password
                 using (var command = new SqlCommand(updateExistingPasswords, connection))
+                {
+                    command.Parameters.AddWithValue("@defaultHashedPassword", HashPassword("defaultPassword123"));
                     command.ExecuteNonQuery();
+                }
                 
                 using (var command = new SqlCommand(createReservationsTable, connection))
                     command.ExecuteNonQuery();
