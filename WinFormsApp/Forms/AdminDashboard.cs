@@ -1,0 +1,324 @@
+using System;
+using System.Drawing;
+using System.Windows.Forms;
+using WinFormsApp.Models;
+using WinFormsApp.Data;
+
+namespace WinFormsApp.Forms
+{
+    public partial class AdminDashboard : Form
+    {
+        private User currentAdmin;
+
+        public AdminDashboard(User admin)
+        {
+            currentAdmin = admin;
+            InitializeComponent();
+        }
+
+        private void InitializeComponent()
+        {
+            this.Text = "Admin Dashboard";
+            this.Size = new Size(900, 700);
+            this.StartPosition = FormStartPosition.CenterScreen;
+
+            TabControl tabControl = new TabControl();
+            tabControl.Dock = DockStyle.Fill;
+
+            // Dashboard Tab
+            TabPage dashTab = new TabPage("Dashboard");
+            CreateDashboardTab(dashTab);
+
+            // Users Tab
+            TabPage usersTab = new TabPage("Manage Users");
+            CreateUsersTab(usersTab);
+
+            // Books Tab
+            TabPage booksTab = new TabPage("Manage Books");
+            CreateBooksTab(booksTab);
+
+            tabControl.TabPages.AddRange(new TabPage[] { dashTab, usersTab, booksTab });
+            this.Controls.Add(tabControl);
+        }
+
+        private void CreateDashboardTab(TabPage tab)
+        {
+            Label lblTitle = new Label();
+            lblTitle.Text = "Library Statistics";
+            lblTitle.Font = new Font("Arial", 18, FontStyle.Bold);
+            lblTitle.Location = new Point(20, 20);
+            lblTitle.Size = new Size(300, 30);
+
+            // Statistics panels
+            Panel statsPanel = new Panel();
+            statsPanel.Location = new Point(20, 70);
+            statsPanel.Size = new Size(1000, 200);
+            statsPanel.BorderStyle = BorderStyle.FixedSingle;
+
+            // Create stat boxes
+            CreateStatBox(statsPanel, "Total Books", "0", 20, 20, Color.Blue);
+            CreateStatBox(statsPanel, "Available Books", "0", 220, 20, Color.Green);
+            CreateStatBox(statsPanel, "Reserved Books", "0", 420, 20, Color.Orange);
+            CreateStatBox(statsPanel, "Total Users", "0", 620, 20, Color.Purple);
+
+            tab.Controls.AddRange(new Control[] { lblTitle, statsPanel });
+        }
+
+        private void CreateStatBox(Panel parent, string title, string value, int x, int y, Color color)
+        {
+            Panel box = new Panel();
+            box.Location = new Point(x, y);
+            box.Size = new Size(180, 120);
+            box.BackColor = color;
+
+            Label lblTitle = new Label();
+            lblTitle.Text = title;
+            lblTitle.ForeColor = Color.White;
+            lblTitle.Font = new Font("Arial", 12, FontStyle.Bold);
+            lblTitle.Location = new Point(10, 20);
+            lblTitle.Size = new Size(160, 25);
+            lblTitle.TextAlign = ContentAlignment.MiddleCenter;
+
+            Label lblValue = new Label();
+            lblValue.Text = value;
+            lblValue.ForeColor = Color.White;
+            lblValue.Font = new Font("Arial", 24, FontStyle.Bold);
+            lblValue.Location = new Point(10, 50);
+            lblValue.Size = new Size(160, 40);
+            lblValue.TextAlign = ContentAlignment.MiddleCenter;
+
+            box.Controls.AddRange(new Control[] { lblTitle, lblValue });
+            parent.Controls.Add(box);
+        }
+
+        private void CreateUsersTab(TabPage tab)
+        {
+            ListView lstUsers = new ListView();
+            lstUsers.Location = new Point(20, 20);
+            lstUsers.Size = new Size(1000, 500);
+            lstUsers.View = View.Details;
+            lstUsers.FullRowSelect = true;
+            lstUsers.GridLines = true;
+            lstUsers.Columns.AddRange(new ColumnHeader[] {
+                new ColumnHeader() { Text = "ID", Width = 50 },
+                new ColumnHeader() { Text = "Name", Width = 150 },
+                new ColumnHeader() { Text = "Email", Width = 200 },
+                new ColumnHeader() { Text = "Study Level", Width = 100 },
+                new ColumnHeader() { Text = "Study Field", Width = 120 },
+                new ColumnHeader() { Text = "Status", Width = 80 }
+            });
+
+            Button btnBlock = new Button();
+            btnBlock.Text = "Block User";
+            btnBlock.Location = new Point(20, 540);
+            btnBlock.Size = new Size(100, 35);
+            btnBlock.BackColor = Color.Red;
+            btnBlock.ForeColor = Color.White;
+
+            Button btnUnblock = new Button();
+            btnUnblock.Text = "Unblock User";
+            btnUnblock.Location = new Point(140, 540);
+            btnUnblock.Size = new Size(100, 35);
+            btnUnblock.BackColor = Color.Green;
+            btnUnblock.ForeColor = Color.White;
+
+            Button btnDelete = new Button();
+            btnDelete.Text = "Delete User";
+            btnDelete.Location = new Point(260, 540);
+            btnDelete.Size = new Size(100, 35);
+            btnDelete.BackColor = Color.DarkRed;
+            btnDelete.ForeColor = Color.White;
+
+            Button btnRefresh = new Button();
+            btnRefresh.Text = "Refresh";
+            btnRefresh.Location = new Point(380, 540);
+            btnRefresh.Size = new Size(100, 35);
+            btnRefresh.BackColor = Color.DodgerBlue;
+            btnRefresh.ForeColor = Color.White;
+
+            tab.Controls.AddRange(new Control[] { lstUsers, btnBlock, btnUnblock, btnDelete, btnRefresh });
+        }
+
+        private void CreateBooksTab(TabPage tab)
+        {
+            // Add Book Section
+            GroupBox grpAddBook = new GroupBox();
+            grpAddBook.Text = "Add New Book";
+            grpAddBook.Location = new Point(20, 20);
+            grpAddBook.Size = new Size(400, 300);
+
+            Label lblTitle = new Label();
+            lblTitle.Text = "Title:";
+            lblTitle.Location = new Point(15, 30);
+            lblTitle.Size = new Size(60, 20);
+
+            TextBox txtTitle = new TextBox();
+            txtTitle.Location = new Point(80, 28);
+            txtTitle.Size = new Size(300, 25);
+
+            Label lblAuthor = new Label();
+            lblAuthor.Text = "Author:";
+            lblAuthor.Location = new Point(15, 65);
+            lblAuthor.Size = new Size(60, 20);
+
+            TextBox txtAuthor = new TextBox();
+            txtAuthor.Location = new Point(80, 63);
+            txtAuthor.Size = new Size(300, 25);
+
+            Label lblISBN = new Label();
+            lblISBN.Text = "ISBN:";
+            lblISBN.Location = new Point(15, 100);
+            lblISBN.Size = new Size(60, 20);
+
+            TextBox txtISBN = new TextBox();
+            txtISBN.Location = new Point(80, 98);
+            txtISBN.Size = new Size(300, 25);
+
+            Label lblCategory = new Label();
+            lblCategory.Text = "Category:";
+            lblCategory.Location = new Point(15, 135);
+            lblCategory.Size = new Size(60, 20);
+
+            TextBox txtCategory = new TextBox();
+            txtCategory.Location = new Point(80, 133);
+            txtCategory.Size = new Size(300, 25);
+
+            Label lblField = new Label();
+            lblField.Text = "Field:";
+            lblField.Location = new Point(15, 170);
+            lblField.Size = new Size(60, 20);
+
+            ComboBox cmbField = new ComboBox();
+            cmbField.Items.AddRange(new string[] { "BI", "Finance", "Marketing", "Accounting", "Management", "Big Data", "General", "Other" });
+            cmbField.Location = new Point(80, 168);
+            cmbField.Size = new Size(300, 25);
+            cmbField.DropDownStyle = ComboBoxStyle.DropDownList;
+
+            Label lblCount = new Label();
+            lblCount.Text = "Count:";
+            lblCount.Location = new Point(15, 205);
+            lblCount.Size = new Size(60, 20);
+
+            NumericUpDown numCount = new NumericUpDown();
+            numCount.Location = new Point(80, 203);
+            numCount.Size = new Size(100, 25);
+            numCount.Minimum = 1;
+            numCount.Maximum = 100;
+            numCount.Value = 1;
+
+            Button btnAddBook = new Button();
+            btnAddBook.Text = "Add Book";
+            btnAddBook.Location = new Point(80, 250);
+            btnAddBook.Size = new Size(120, 35);
+            btnAddBook.BackColor = Color.Green;
+            btnAddBook.ForeColor = Color.White;
+            btnAddBook.Click += (s, e) => AddBook(txtTitle.Text, txtAuthor.Text, txtISBN.Text, 
+                txtCategory.Text, cmbField.SelectedItem?.ToString(), (int)numCount.Value);
+
+            grpAddBook.Controls.AddRange(new Control[] {
+                lblTitle, txtTitle, lblAuthor, txtAuthor, lblISBN, txtISBN,
+                lblCategory, txtCategory, lblField, cmbField, lblCount, numCount, btnAddBook
+            });
+
+            // Books List
+            ListView lstBooks = new ListView();
+            lstBooks.Location = new Point(450, 20);
+            lstBooks.Size = new Size(700, 500);
+            lstBooks.View = View.Details;
+            lstBooks.FullRowSelect = true;
+            lstBooks.GridLines = true;
+            lstBooks.Columns.AddRange(new ColumnHeader[] {
+                new ColumnHeader() { Text = "ID", Width = 50 },
+                new ColumnHeader() { Text = "Title", Width = 200 },
+                new ColumnHeader() { Text = "Author", Width = 150 },
+                new ColumnHeader() { Text = "Category", Width = 100 },
+                new ColumnHeader() { Text = "Field", Width = 100 },
+                new ColumnHeader() { Text = "Available", Width = 70 },
+                new ColumnHeader() { Text = "Total", Width = 70 }
+            });
+
+            Button btnRefreshBooks = new Button();
+            btnRefreshBooks.Text = "Refresh Books";
+            btnRefreshBooks.Location = new Point(450, 540);
+            btnRefreshBooks.Size = new Size(120, 35);
+            btnRefreshBooks.BackColor = Color.DodgerBlue;
+            btnRefreshBooks.ForeColor = Color.White;
+            btnRefreshBooks.Click += (s, e) => LoadBooks(lstBooks);
+
+            Button btnDeleteBook = new Button();
+            btnDeleteBook.Text = "Delete Selected";
+            btnDeleteBook.Location = new Point(590, 540);
+            btnDeleteBook.Size = new Size(120, 35);
+            btnDeleteBook.BackColor = Color.Red;
+            btnDeleteBook.ForeColor = Color.White;
+
+            tab.Controls.AddRange(new Control[] { grpAddBook, lstBooks, btnRefreshBooks, btnDeleteBook });
+            
+            // Initial load
+            LoadBooks(lstBooks);
+        }
+
+        private void AddBook(string title, string author, string isbn, string category, string field, int count)
+        {
+            if (string.IsNullOrEmpty(title) || string.IsNullOrEmpty(author))
+            {
+                MessageBox.Show("Please enter both title and author.", "Validation Error");
+                return;
+            }
+
+            using (var connection = DatabaseHelper.GetConnection())
+            {
+                connection.Open();
+                string query = @"INSERT INTO Books (Title, Author, ISBN, Category, StudyField, AvailableCount, TotalCount)
+                                VALUES (@title, @author, @isbn, @category, @field, @count, @count)";
+
+                using (var command = new System.Data.SQLite.SQLiteCommand(query, connection))
+                {
+                    command.Parameters.AddWithValue("@title", title);
+                    command.Parameters.AddWithValue("@author", author);
+                    command.Parameters.AddWithValue("@isbn", isbn ?? "");
+                    command.Parameters.AddWithValue("@category", category ?? "");
+                    command.Parameters.AddWithValue("@field", field ?? "General");
+                    command.Parameters.AddWithValue("@count", count);
+
+                    try
+                    {
+                        command.ExecuteNonQuery();
+                        MessageBox.Show("Book added successfully!", "Success");
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show("Error adding book: " + ex.Message, "Error");
+                    }
+                }
+            }
+        }
+
+        private void LoadBooks(ListView listView)
+        {
+            listView.Items.Clear();
+            using (var connection = DatabaseHelper.GetConnection())
+            {
+                connection.Open();
+                string query = "SELECT * FROM Books ORDER BY Title";
+                using (var command = new System.Data.SQLite.SQLiteCommand(query, connection))
+                {
+                    using (var reader = command.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            ListViewItem item = new ListViewItem(reader["BookID"].ToString());
+                            item.SubItems.Add(reader["Title"].ToString());
+                            item.SubItems.Add(reader["Author"].ToString());
+                            item.SubItems.Add(reader["Category"].ToString());
+                            item.SubItems.Add(reader["StudyField"].ToString());
+                            item.SubItems.Add(reader["AvailableCount"].ToString());
+                            item.SubItems.Add(reader["TotalCount"].ToString());
+                            listView.Items.Add(item);
+                        }
+                    }
+                }
+            }
+        }
+    }
+} 
