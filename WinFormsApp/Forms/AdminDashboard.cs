@@ -461,25 +461,9 @@ namespace WinFormsApp.Forms
             btnDeleteBook.Size = new Size(120, 35);
             btnDeleteBook.BackColor = Color.Red;
             btnDeleteBook.ForeColor = Color.White;
-            btnDeleteBook.Click += (s, e) => DeleteSelectedBook(lstBooks);            // Add a test button to verify database connection
-            Button btnTestDB = new Button();
-            btnTestDB.Text = "Test DB";
-            btnTestDB.Location = new Point(730, 540);
-            btnTestDB.Size = new Size(80, 35);
-            btnTestDB.BackColor = Color.Orange;
-            btnTestDB.ForeColor = Color.White;
-            btnTestDB.Click += (s, e) => TestDatabaseConnection();
+            btnDeleteBook.Click += (s, e) => DeleteSelectedBook(lstBooks);
 
-            // Add a button to validate database structure
-            Button btnValidateDB = new Button();
-            btnValidateDB.Text = "Check DB";
-            btnValidateDB.Location = new Point(820, 540);
-            btnValidateDB.Size = new Size(80, 35);
-            btnValidateDB.BackColor = Color.Purple;
-            btnValidateDB.ForeColor = Color.White;
-            btnValidateDB.Click += (s, e) => ValidateDatabaseStructure();
-
-            tab.Controls.AddRange(new Control[] { grpAddBook, lstBooks, btnRefreshBooks, btnDeleteBook, btnTestDB, btnValidateDB });
+            tab.Controls.AddRange(new Control[] { grpAddBook, lstBooks, btnRefreshBooks, btnDeleteBook });
             
             // Initial load
             LoadBooks(lstBooks);
@@ -535,7 +519,6 @@ namespace WinFormsApp.Forms
                     {
                         using (var reader = command.ExecuteReader())
                         {
-                            int bookCount = 0;
                             while (reader.Read())
                             {
                                 ListViewItem item = new ListViewItem(reader["BookID"].ToString());
@@ -547,18 +530,7 @@ namespace WinFormsApp.Forms
                                 item.SubItems.Add(reader["TotalCount"].ToString());
                                 item.Tag = reader["BookID"]; // Store BookID in Tag for easy access
                                 listView.Items.Add(item);
-                                bookCount++;
-                                
-                                // Debug: Show the first few book's Tag values
-                                if (bookCount <= 3)
-                                {
-                                    string debugMsg = $"Book {bookCount}: ID={reader["BookID"]}, Title={reader["Title"]}, Tag={item.Tag}";
-                                    MessageBox.Show(debugMsg, "Debug - Book Loading", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                                }
                             }
-                            
-                            // Show final count
-                            MessageBox.Show($"Loaded {bookCount} books total", "Debug - Load Complete", MessageBoxButtons.OK, MessageBoxIcon.Information);
                         }
                     }
                 }
@@ -642,9 +614,6 @@ namespace WinFormsApp.Forms
             return stats;
         }        private void DeleteSelectedBook(ListView listView)
         {
-            // First, verify the method is being called
-            MessageBox.Show("DeleteSelectedBook method called!", "Debug - Method Entry", MessageBoxButtons.OK, MessageBoxIcon.Information);
-            
             if (listView.SelectedItems.Count == 0)
             {
                 MessageBox.Show("Please select a book to delete.", "No Selection", MessageBoxButtons.OK, MessageBoxIcon.Warning);
@@ -653,17 +622,9 @@ namespace WinFormsApp.Forms
 
             var selectedItem = listView.SelectedItems[0];
             
-            // Critical debug: Check if Tag contains BookID
-            string debugInfo = $"Selection Debug:\n" +
-                             $"- Items selected: {listView.SelectedItems.Count}\n" +
-                             $"- Selected item Tag: {selectedItem.Tag?.ToString() ?? "NULL"}\n" +
-                             $"- First subitem (Title): {selectedItem.SubItems[1].Text}";
-            
-            MessageBox.Show(debugInfo, "Debug - Selection Info", MessageBoxButtons.OK, MessageBoxIcon.Information);
-            
             if (selectedItem.Tag == null || !int.TryParse(selectedItem.Tag.ToString(), out int bookId))
             {
-                MessageBox.Show("Invalid book selection. The Tag property is missing or invalid.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show("Invalid book selection.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return;
             }
 
@@ -701,14 +662,6 @@ namespace WinFormsApp.Forms
                             command.Parameters.AddWithValue("@bookId", bookId);
                             int rowsAffected = command.ExecuteNonQuery();
                             
-                            // Critical debug: Show final result
-                            string resultInfo = $"Delete Operation Result:\n" +
-                                              $"- BookID: {bookId}\n" +
-                                              $"- SQL: {deleteBook}\n" +
-                                              $"- Rows affected: {rowsAffected}";
-                            
-                            MessageBox.Show(resultInfo, "Debug - Delete Result", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                            
                             if (rowsAffected > 0)
                             {
                                 MessageBox.Show($"Book '{bookTitle}' deleted successfully!", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
@@ -726,76 +679,6 @@ namespace WinFormsApp.Forms
                 {
                     MessageBox.Show($"Error deleting book: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
-            }
-        }
-
-        private void TestDatabaseConnection()
-        {
-            try
-            {
-                using (var connection = DatabaseHelper.GetConnection())
-                {
-                    connection.Open();
-                    
-                    // Test basic query
-                    string testQuery = "SELECT COUNT(*) FROM Books";
-                    using (var command = new SqlCommand(testQuery, connection))
-                    {
-                        var count = command.ExecuteScalar();
-                        MessageBox.Show($"Database connection successful!\nBooks in database: {count}", "Database Test", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Database connection failed!\nError: {ex.Message}", "Database Test", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
-        }
-
-        private void ValidateDatabaseStructure()
-        {
-            try
-            {
-                using (var connection = DatabaseHelper.GetConnection())
-                {
-                    connection.Open();
-                    
-                    // Check if Books table exists
-                    string checkTableQuery = @"
-                        SELECT COUNT(*) 
-                        FROM INFORMATION_SCHEMA.TABLES 
-                        WHERE TABLE_NAME = 'Books'";
-                    
-                    using (var command = new SqlCommand(checkTableQuery, connection))
-                    {
-                        int tableExists = (int)command.ExecuteScalar();
-                        MessageBox.Show($"Books table exists: {tableExists > 0}", "Debug Table Check", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                    }
-                    
-                    // Check table structure
-                    string checkColumnsQuery = @"
-                        SELECT COLUMN_NAME, DATA_TYPE, IS_NULLABLE
-                        FROM INFORMATION_SCHEMA.COLUMNS 
-                        WHERE TABLE_NAME = 'Books'
-                        ORDER BY ORDINAL_POSITION";
-                    
-                    using (var command = new SqlCommand(checkColumnsQuery, connection))
-                    {
-                        using (var reader = command.ExecuteReader())
-                        {
-                            string columns = "Books table structure:\n";
-                            while (reader.Read())
-                            {
-                                columns += $"- {reader["COLUMN_NAME"]} ({reader["DATA_TYPE"]}, Nullable: {reader["IS_NULLABLE"]})\n";
-                            }
-                            MessageBox.Show(columns, "Debug Table Structure", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                        }
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Error validating database structure: {ex.Message}", "Debug Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
     }
