@@ -7,6 +7,17 @@ using Microsoft.Data.SqlClient;
 
 namespace WinFormsApp.Forms
 {
+    // Add UserStatistics class
+    public class UserStatistics
+    {
+        public int ReservedBooks { get; set; }
+        public int ActiveReservations { get; set; }
+        public int LikedBooks { get; set; }
+        public string? FavoriteCategory { get; set; }
+        public int BooksInField { get; set; }
+        public int TotalAvailableBooks { get; set; }
+    }
+
     public partial class StudentDashboard : Form
     {
         private User currentUser;
@@ -163,9 +174,7 @@ namespace WinFormsApp.Forms
 
             // Load all books initially
             LoadAllBooks();
-        }
-
-        private void CreateProfileTab(TabPage tab)
+        }        private void CreateProfileTab(TabPage tab)
         {
             Label lblProfile = new Label();
             lblProfile.Text = "Profile Information";
@@ -182,6 +191,8 @@ namespace WinFormsApp.Forms
             CreateProfileField(tab, "Study Level:", currentUser.StudyLevel, yPos);
             yPos += 40;
             CreateProfileField(tab, "Study Field:", currentUser.StudyField, yPos);
+            yPos += 40;
+            CreateProfileField(tab, "Member Since:", currentUser.CreatedDate.ToString("MMM dd, yyyy"), yPos);
             yPos += 60;
 
             Label lblStats = new Label();
@@ -191,13 +202,33 @@ namespace WinFormsApp.Forms
             lblStats.Size = new Size(200, 25);
             yPos += 40;
 
-            // Add statistics here (books reserved, liked, etc.)
-            CreateProfileField(tab, "Books Reserved:", "0", yPos);
-            yPos += 40;
-            CreateProfileField(tab, "Books Liked:", "0", yPos);
+            // Get actual statistics from database
+            var stats = GetUserStatistics();
+            
+            CreateProfileField(tab, "Books Reserved:", stats.ReservedBooks.ToString(), yPos);
+            yPos += 30;
+            CreateProfileField(tab, "Active Reservations:", stats.ActiveReservations.ToString(), yPos);
+            yPos += 30;
+            CreateProfileField(tab, "Books Liked:", stats.LikedBooks.ToString(), yPos);
+            yPos += 30;
+            CreateProfileField(tab, "Most Liked Category:", stats.FavoriteCategory ?? "None", yPos);
+            yPos += 30;
+            CreateProfileField(tab, "Books in Your Field:", stats.BooksInField.ToString(), yPos);
+            yPos += 30;
+            CreateProfileField(tab, "Total Available Books:", stats.TotalAvailableBooks.ToString(), yPos);
+
+            // Add a refresh button for statistics
+            Button btnRefreshStats = new Button();
+            btnRefreshStats.Text = "Refresh Statistics";
+            btnRefreshStats.Location = new Point(20, yPos + 50);
+            btnRefreshStats.Size = new Size(150, 35);
+            btnRefreshStats.BackColor = Color.DodgerBlue;
+            btnRefreshStats.ForeColor = Color.White;
+            btnRefreshStats.Click += (s, e) => RefreshProfileTab(tab);
 
             tab.Controls.Add(lblProfile);
             tab.Controls.Add(lblStats);
+            tab.Controls.Add(btnRefreshStats);
         }
 
         private void CreateProfileField(TabPage tab, string label, string? value, int yPos)
@@ -556,6 +587,69 @@ namespace WinFormsApp.Forms
             {
                 MessageBox.Show("Please select a book to like.", "No Selection", MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
+        }
+
+        private UserStatistics GetUserStatistics()
+        {
+            UserStatistics stats = new UserStatistics();
+            
+            try
+            {
+                using (var connection = DatabaseHelper.GetConnection())
+                {
+                    connection.Open();
+                    string query = @"
+                        SELECT 
+                            (SELECT COUNT(*) FROM Reservations WHERE UserID = @userId) AS ReservedBooks,
+                            (SELECT COUNT(*) FROM Reservations WHERE UserID = @userId AND Status = 'Active') AS ActiveReservations,
+                            (SELECT COUNT(*) FROM Likes WHERE UserID = @userId) AS LikedBooks,
+                            (SELECT TOP 1 Category FROM Books b
+                             INNER JOIN Likes l ON b.BookID = l.BookID
+                             WHERE l.UserID = @userId
+                             GROUP BY Category
+                             ORDER BY COUNT(*) DESC) AS FavoriteCategory,
+                            (SELECT COUNT(*) FROM Books WHERE StudyField = @field AND AvailableCount > 0) AS BooksInField,
+                            (SELECT COUNT(*) FROM Books WHERE AvailableCount > 0) AS TotalAvailableBooks
+                        ";
+                    
+                    using (var command = new SqlCommand(query, connection))
+                    {
+                        command.Parameters.AddWithValue("@userId", currentUser.UserID);
+                        command.Parameters.AddWithValue("@field", currentUser.StudyField ?? "General");
+                        
+                        using (var reader = command.ExecuteReader())
+                        {
+                            if (reader.Read())
+                            {
+                                stats.ReservedBooks = reader.GetInt32(0);
+                                stats.ActiveReservations = reader.GetInt32(1);
+                                stats.LikedBooks = reader.GetInt32(2);
+                                stats.FavoriteCategory = reader.IsDBNull(3) ? null : reader.GetString(3);
+                                stats.BooksInField = reader.GetInt32(4);
+                                stats.TotalAvailableBooks = reader.GetInt32(5);
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error retrieving statistics: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+            
+            return stats;
+        }
+
+        private void RefreshProfileTab(TabPage tab)
+        {
+            // Clear existing controls in the tab
+            tab.Controls.Clear();
+            
+            // Recreate the profile and statistics sections
+            CreateProfileTab(tab);
+            
+            // Optionally, show a message or perform additional actions
+            MessageBox.Show("Profile statistics refreshed.", "Refreshed", MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
     }
 }
