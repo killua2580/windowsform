@@ -7,9 +7,26 @@ using Microsoft.Data.SqlClient;
 
 namespace WinFormsApp.Forms
 {
+    // Add AdminStatistics class
+    public class AdminStatistics
+    {
+        public int TotalBooks { get; set; }
+        public int AvailableBooks { get; set; }
+        public int ReservedBooks { get; set; }
+        public int TotalUsers { get; set; }
+        public int ActiveUsers { get; set; }
+        public int BlockedUsers { get; set; }
+        public int TotalReservations { get; set; }
+        public int TotalLikes { get; set; }
+    }
+
     public partial class AdminDashboard : Form
     {
         private User currentAdmin;
+        private Label lblTotalBooksValue = null!;
+        private Label lblAvailableBooksValue = null!;
+        private Label lblReservedBooksValue = null!;
+        private Label lblTotalUsersValue = null!;
 
         public AdminDashboard(User admin)
         {
@@ -40,9 +57,7 @@ namespace WinFormsApp.Forms
 
             tabControl.TabPages.AddRange(new TabPage[] { dashTab, usersTab, booksTab });
             this.Controls.Add(tabControl);
-        }
-
-        private void CreateDashboardTab(TabPage tab)
+        }        private void CreateDashboardTab(TabPage tab)
         {
             Label lblTitle = new Label();
             lblTitle.Text = "Library Statistics";
@@ -56,16 +71,26 @@ namespace WinFormsApp.Forms
             statsPanel.Size = new Size(1000, 200);
             statsPanel.BorderStyle = BorderStyle.FixedSingle;
 
-            // Create stat boxes
-            CreateStatBox(statsPanel, "Total Books", "0", 20, 20, Color.Blue);
-            CreateStatBox(statsPanel, "Available Books", "0", 220, 20, Color.Green);
-            CreateStatBox(statsPanel, "Reserved Books", "0", 420, 20, Color.Orange);
-            CreateStatBox(statsPanel, "Total Users", "0", 620, 20, Color.Purple);
+            // Create stat boxes with label references
+            CreateStatBox(statsPanel, "Total Books", "0", 20, 20, Color.Blue, ref lblTotalBooksValue);
+            CreateStatBox(statsPanel, "Available Books", "0", 220, 20, Color.Green, ref lblAvailableBooksValue);
+            CreateStatBox(statsPanel, "Reserved Books", "0", 420, 20, Color.Orange, ref lblReservedBooksValue);
+            CreateStatBox(statsPanel, "Total Users", "0", 620, 20, Color.Purple, ref lblTotalUsersValue);
 
-            tab.Controls.AddRange(new Control[] { lblTitle, statsPanel });
-        }
+            // Add refresh button
+            Button btnRefreshStats = new Button();
+            btnRefreshStats.Text = "Refresh Statistics";
+            btnRefreshStats.Location = new Point(20, 290);
+            btnRefreshStats.Size = new Size(150, 35);
+            btnRefreshStats.BackColor = Color.DodgerBlue;
+            btnRefreshStats.ForeColor = Color.White;
+            btnRefreshStats.Click += (s, e) => LoadStatistics();
 
-        private void CreateStatBox(Panel parent, string title, string value, int x, int y, Color color)
+            tab.Controls.AddRange(new Control[] { lblTitle, statsPanel, btnRefreshStats });
+            
+            // Load initial statistics
+            LoadStatistics();
+        }        private void CreateStatBox(Panel parent, string title, string value, int x, int y, Color color, ref Label labelValueRef)
         {
             Panel box = new Panel();
             box.Location = new Point(x, y);
@@ -87,6 +112,9 @@ namespace WinFormsApp.Forms
             lblValue.Location = new Point(10, 50);
             lblValue.Size = new Size(160, 40);
             lblValue.TextAlign = ContentAlignment.MiddleCenter;
+
+            // Store reference to the value label
+            labelValueRef = lblValue;
 
             box.Controls.AddRange(new Control[] { lblTitle, lblValue });
             parent.Controls.Add(box);
@@ -220,10 +248,10 @@ namespace WinFormsApp.Forms
                             command.ExecuteNonQuery();
                         }
                     }
-                    
-                    string action = block ? "blocked" : "unblocked";
+                      string action = block ? "blocked" : "unblocked";
                     MessageBox.Show($"User {action} successfully!", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
                     LoadUsers(listView);
+                    LoadStatistics(); // Refresh statistics after user status change
                 }
                 catch (Exception ex)
                 {
@@ -283,9 +311,9 @@ namespace WinFormsApp.Forms
                                 command.ExecuteNonQuery();
                             }
                         }
-                        
-                        MessageBox.Show("User deleted successfully!", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                          MessageBox.Show("User deleted successfully!", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
                         LoadUsers(listView);
+                        LoadStatistics(); // Refresh statistics after user deletion
                     }
                     catch (Exception ex)
                     {
@@ -447,12 +475,11 @@ namespace WinFormsApp.Forms
                     command.Parameters.AddWithValue("@category", category ?? "");
                     command.Parameters.AddWithValue("@field", field ?? "General");
                     command.Parameters.AddWithValue("@cover", string.IsNullOrWhiteSpace(coverUrl) ? (object)DBNull.Value : coverUrl.Trim());
-                    command.Parameters.AddWithValue("@count", count);
-
-                    try
+                    command.Parameters.AddWithValue("@count", count);                    try
                     {
                         command.ExecuteNonQuery();
                         MessageBox.Show("Book added successfully!", "Success");
+                        LoadStatistics(); // Refresh statistics after adding book
                     }
                     catch (Exception ex)
                     {
@@ -488,5 +515,78 @@ namespace WinFormsApp.Forms
                 }
             }
         }
+
+        private void LoadStatistics()
+        {
+            try
+            {
+                var stats = GetAdminStatistics();
+                
+                // Update the statistics labels with real data
+                if (lblTotalBooksValue != null)
+                    lblTotalBooksValue.Text = stats.TotalBooks.ToString();
+                    
+                if (lblAvailableBooksValue != null)
+                    lblAvailableBooksValue.Text = stats.AvailableBooks.ToString();
+                    
+                if (lblReservedBooksValue != null)
+                    lblReservedBooksValue.Text = stats.ReservedBooks.ToString();
+                    
+                if (lblTotalUsersValue != null)
+                    lblTotalUsersValue.Text = stats.TotalUsers.ToString();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error loading statistics: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }        private AdminStatistics GetAdminStatistics()
+        {
+            AdminStatistics stats = new AdminStatistics();
+            
+            try
+            {
+                using (var connection = DatabaseHelper.GetConnection())
+                {
+                    connection.Open();
+                    string query = @"
+                        SELECT 
+                            (SELECT COUNT(*) FROM Books) AS TotalBooks,
+                            (SELECT ISNULL(SUM(AvailableCount), 0) FROM Books) AS AvailableBooks,
+                            (SELECT COUNT(*) FROM Reservations WHERE Status = 'Active') AS ReservedBooks,
+                            (SELECT COUNT(*) FROM Users) AS TotalUsers,
+                            (SELECT COUNT(*) FROM Users WHERE IsBlocked = 0) AS ActiveUsers,
+                            (SELECT COUNT(*) FROM Users WHERE IsBlocked = 1) AS BlockedUsers,
+                            (SELECT COUNT(*) FROM Reservations) AS TotalReservations,
+                            (SELECT COUNT(*) FROM Likes) AS TotalLikes
+                        ";
+                    
+                    using (var command = new SqlCommand(query, connection))
+                    {
+                        using (var reader = command.ExecuteReader())
+                        {
+                            if (reader.Read())
+                            {
+                                stats.TotalBooks = reader.IsDBNull(0) ? 0 : reader.GetInt32(0);
+                                stats.AvailableBooks = reader.IsDBNull(1) ? 0 : reader.GetInt32(1);
+                                stats.ReservedBooks = reader.IsDBNull(2) ? 0 : reader.GetInt32(2);
+                                stats.TotalUsers = reader.IsDBNull(3) ? 0 : reader.GetInt32(3);
+                                stats.ActiveUsers = reader.IsDBNull(4) ? 0 : reader.GetInt32(4);
+                                stats.BlockedUsers = reader.IsDBNull(5) ? 0 : reader.GetInt32(5);
+                                stats.TotalReservations = reader.IsDBNull(6) ? 0 : reader.GetInt32(6);
+                                stats.TotalLikes = reader.IsDBNull(7) ? 0 : reader.GetInt32(7);
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error retrieving admin statistics: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+            
+            return stats;
+        }
+
+        // ...existing code...
     }
 }
