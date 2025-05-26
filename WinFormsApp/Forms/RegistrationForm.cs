@@ -114,7 +114,12 @@ namespace WinFormsApp.Forms
             lblEmail.Font = new Font("Segoe UI", 11, FontStyle.Bold);
             lblEmail.ForeColor = Color.FromArgb(70, 70, 70);
             lblEmail.BackColor = Color.Transparent;
-            yPos += 30;            txtEmail = new TextBox();
+            yPos += 30;            Panel emailBorder = new Panel();
+            emailBorder.Location = new Point(48, yPos - 2);
+            emailBorder.Size = new Size(504, 39);
+            emailBorder.BackColor = Color.FromArgb(200, 200, 200);
+            
+            txtEmail = new TextBox();
             txtEmail.Location = new Point(50, yPos);
             txtEmail.Size = new Size(500, 35);
             txtEmail.Font = new Font("Segoe UI", 12);
@@ -124,11 +129,6 @@ namespace WinFormsApp.Forms
             txtEmail.Enabled = true;
             txtEmail.ReadOnly = false;
             txtEmail.TabIndex = 1;
-            
-            Panel emailBorder = new Panel();
-            emailBorder.Location = new Point(48, yPos - 2);
-            emailBorder.Size = new Size(504, 39);
-            emailBorder.BackColor = Color.FromArgb(200, 200, 200);
             yPos += 50;
 
             // First Name
@@ -147,7 +147,17 @@ namespace WinFormsApp.Forms
             lblLastName.Font = new Font("Segoe UI", 11, FontStyle.Bold);
             lblLastName.ForeColor = Color.FromArgb(70, 70, 70);
             lblLastName.BackColor = Color.Transparent;
-            yPos += 30;            txtFirstName = new TextBox();
+            yPos += 30;            Panel firstNameBorder = new Panel();
+            firstNameBorder.Location = new Point(48, yPos - 2);
+            firstNameBorder.Size = new Size(244, 39);
+            firstNameBorder.BackColor = Color.FromArgb(200, 200, 200);
+
+            Panel lastNameBorder = new Panel();
+            lastNameBorder.Location = new Point(308, yPos - 2);
+            lastNameBorder.Size = new Size(244, 39);
+            lastNameBorder.BackColor = Color.FromArgb(200, 200, 200);
+            
+            txtFirstName = new TextBox();
             txtFirstName.Location = new Point(50, yPos);
             txtFirstName.Size = new Size(240, 35);
             txtFirstName.Font = new Font("Segoe UI", 12);
@@ -168,16 +178,6 @@ namespace WinFormsApp.Forms
             txtLastName.Enabled = true;
             txtLastName.ReadOnly = false;
             txtLastName.TabIndex = 3;
-
-            Panel firstNameBorder = new Panel();
-            firstNameBorder.Location = new Point(48, yPos - 2);
-            firstNameBorder.Size = new Size(244, 39);
-            firstNameBorder.BackColor = Color.FromArgb(200, 200, 200);
-
-            Panel lastNameBorder = new Panel();
-            lastNameBorder.Location = new Point(308, yPos - 2);
-            lastNameBorder.Size = new Size(244, 39);
-            lastNameBorder.BackColor = Color.FromArgb(200, 200, 200);
             yPos += 50;
 
             // Study Level and Field
@@ -298,13 +298,31 @@ namespace WinFormsApp.Forms
             closeButton.FlatAppearance.BorderSize = 0;
             closeButton.Cursor = Cursors.Hand;
             closeButton.Click += (s, e) => this.Close();
-            closeButton.Anchor = AnchorStyles.Top | AnchorStyles.Right;            // Add all controls
+            closeButton.Anchor = AnchorStyles.Top | AnchorStyles.Right;            // Add controls in the correct order to ensure proper z-order
+            // First add non-interactive controls
             mainPanel.Controls.AddRange(new Control[] {
-                welcomeLabel, lblEmail, emailBorder, txtEmail, 
-                lblFirstName, lblLastName, firstNameBorder, lastNameBorder, txtFirstName, txtLastName,
-                lblStudyLevel, lblStudyField, cmbStudyLevel, cmbStudyField,
+                welcomeLabel, lblEmail,
+                lblFirstName, lblLastName,
+                lblStudyLevel, lblStudyField,
                 btnRegister, btnSkip, btnBackToLogin, btnExit, benefitsLabel
             });
+            
+            // Add border panels
+            mainPanel.Controls.Add(emailBorder);
+            mainPanel.Controls.Add(firstNameBorder);
+            mainPanel.Controls.Add(lastNameBorder);
+            
+            // Add interactive controls last so they appear on top
+            mainPanel.Controls.Add(txtEmail);
+            mainPanel.Controls.Add(txtFirstName);
+            mainPanel.Controls.Add(txtLastName);
+            mainPanel.Controls.Add(cmbStudyLevel);
+            mainPanel.Controls.Add(cmbStudyField);
+            
+            // Ensure text boxes are brought to front
+            txtEmail.BringToFront();
+            txtFirstName.BringToFront();
+            txtLastName.BringToFront();
 
             this.Controls.AddRange(new Control[] { headerPanel, mainPanel, closeButton });
         }
