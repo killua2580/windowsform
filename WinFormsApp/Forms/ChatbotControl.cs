@@ -142,7 +142,7 @@ namespace WinFormsApp.Forms
             headerPanel.Controls.AddRange(new Control[] { pictureBoxBot, lblTitle, lblSubtitle, lblStatus, lblModel });            // Modern light-themed chat display area
             rtbChat = new RichTextBox();
             rtbChat.Location = new Point(20, 105); // Adjusted for updated header height
-            rtbChat.Size = new Size(this.Width - 40, this.Height - 185); // Adjusted height for input bar
+            rtbChat.Size = new Size(this.Width - 40, 20); // Extremely minimal chat display height
             rtbChat.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right | AnchorStyles.Bottom;
             rtbChat.ReadOnly = true;
             rtbChat.BackColor = Color.White; // Clean white background
@@ -201,10 +201,10 @@ namespace WinFormsApp.Forms
                 }
             };            // Modern light-themed input container with fixed position at bottom and always visible
             Panel inputPanel = new Panel();
-            inputPanel.Location = new Point(20, this.Height - 80);
-            inputPanel.Size = new Size(this.Width - 40, 60); // Clean, compact height
-            inputPanel.BackColor = Color.White; // White background
-            inputPanel.Anchor = AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
+            inputPanel.Location = new Point(20, 135); // Move up to match extremely reduced chat area
+            inputPanel.Size = new Size(this.Width - 40, 60); // Keep input area comfortable
+            inputPanel.BackColor = Color.White;
+            inputPanel.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
             inputPanel.Visible = true;
             inputPanel.BringToFront();
             
@@ -260,7 +260,7 @@ namespace WinFormsApp.Forms
             // Modern light-themed text input with clean design
             txtMessage = new TextBox();
             txtMessage.Location = new Point(15, 10);
-            txtMessage.Size = new Size(inputPanel.Width - 80, 40); // Optimized height and width
+            txtMessage.Size = new Size(inputPanel.Width - 80, 40); // Large and comfortable for typing
             txtMessage.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
             txtMessage.Font = new Font("Segoe UI", 11); // Slightly smaller font for cleaner look
             txtMessage.BorderStyle = BorderStyle.None;
@@ -319,9 +319,9 @@ namespace WinFormsApp.Forms
                 txtMessage.Focus();
             };            // Modern clean send button with hover effects
             btnSend = new Button();
-            btnSend.Text = "➤"; // Simple arrow for clean look
             btnSend.Location = new Point(inputPanel.Width - 60, 10);
-            btnSend.Size = new Size(42, 42);
+            btnSend.Size = new Size(42, 40); // Match input height
+            btnSend.Text = "➤"; // Simple arrow for clean look
             btnSend.BackColor = Color.FromArgb(13, 110, 253); // Modern blue
             btnSend.ForeColor = Color.White;
             btnSend.FlatStyle = FlatStyle.Flat;
@@ -383,12 +383,37 @@ namespace WinFormsApp.Forms
                 btnSend.Invalidate(); // Trigger repaint
             };// Add controls in the right order to ensure proper z-ordering
             inputPanel.Controls.Add(txtMessage);
-            inputPanel.Controls.Add(btnSend);
+            inputPanel.Controls.Add(btnSend);            // Add a toggle button for hiding/showing the chat display
+            Button btnToggleChat = new Button();
+            btnToggleChat.Location = new Point(this.Width - 80, 95); // Position above the chat display
+            btnToggleChat.Size = new Size(24, 24);
+            btnToggleChat.Text = "▲"; // Up arrow to indicate "hide"
+            btnToggleChat.BackColor = Color.Transparent;
+            btnToggleChat.FlatStyle = FlatStyle.Flat;
+            btnToggleChat.FlatAppearance.BorderSize = 0;
+            btnToggleChat.Font = new Font("Segoe UI Symbol", 8, FontStyle.Regular);
+            btnToggleChat.Cursor = Cursors.Hand;
+            btnToggleChat.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+            btnToggleChat.Click += (s, e) => {
+                if (rtbChat.Visible)
+                {
+                    rtbChat.Visible = false;
+                    btnToggleChat.Text = "▼"; // Down arrow to indicate "show"
+                    inputPanel.Location = new Point(20, 105); // Move input panel up when chat is hidden
+                }
+                else
+                {
+                    rtbChat.Visible = true;
+                    btnToggleChat.Text = "▲"; // Up arrow to indicate "hide"
+                    inputPanel.Location = new Point(20, 135); // Move input panel down when chat is shown
+                }
+            };
 
             // Add controls to the form in reverse z-order (bottom to top)
             this.Controls.Add(headerPanel);
+            this.Controls.Add(btnToggleChat);
             this.Controls.Add(rtbChat);
-            this.Controls.Add(inputPanel);            // Set initial focus to the text input when the control is created
+            this.Controls.Add(inputPanel);// Set initial focus to the text input when the control is created
             this.Load += (s, e) => {
                 VerifyTextInputSetup(); // Debug method
                 if (txtMessage != null && !txtMessage.IsDisposed)

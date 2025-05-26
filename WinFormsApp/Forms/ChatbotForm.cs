@@ -33,7 +33,7 @@ namespace WinFormsApp.Forms
             // Chat display with modern styling
             rtbChat = new RichTextBox();
             rtbChat.Location = new Point(20, 20);
-            rtbChat.Size = new Size(840, 500);
+            rtbChat.Size = new Size(840, 220); // Reduced height for compact display
             rtbChat.ReadOnly = true;
             rtbChat.BackColor = Color.White;
             rtbChat.Font = new Font("Segoe UI", 11);
@@ -50,8 +50,8 @@ namespace WinFormsApp.Forms
 
             // Claude-like input container
             Panel inputContainer = new Panel();
-            inputContainer.Location = new Point(20, 540);
-            inputContainer.Size = new Size(760, 80);
+            inputContainer.Location = new Point(20, 250); // Move up to match reduced chat area
+            inputContainer.Size = new Size(760, 40); // Reduced height for compact input
             inputContainer.BackColor = Color.White;
             inputContainer.Anchor = AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
             
@@ -80,8 +80,8 @@ namespace WinFormsApp.Forms
             
             // Multi-line text input like Claude
             txtMessage = new TextBox();
-            txtMessage.Location = new Point(15, 15);
-            txtMessage.Size = new Size(640, 50);
+            txtMessage.Location = new Point(15, 5);
+            txtMessage.Size = new Size(640, 28); // Reduced height
             txtMessage.Font = new Font("Segoe UI", 12);
             txtMessage.BorderStyle = BorderStyle.None;
             txtMessage.BackColor = Color.White;
@@ -99,9 +99,8 @@ namespace WinFormsApp.Forms
 
             // Modern send button with icon
             btnSend = new Button();
-            btnSend.Text = "↗";
-            btnSend.Location = new Point(670, 25);
-            btnSend.Size = new Size(50, 30);
+            btnSend.Location = new Point(670, 5);
+            btnSend.Size = new Size(32, 28); // Reduced size
             btnSend.BackColor = Color.FromArgb(16, 163, 127);
             btnSend.ForeColor = Color.White;
             btnSend.FlatStyle = FlatStyle.Flat;
