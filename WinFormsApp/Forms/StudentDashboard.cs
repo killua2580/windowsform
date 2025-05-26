@@ -1,5 +1,6 @@
 using System;
 using System.Drawing;
+using System.Drawing.Drawing2D;
 using System.Windows.Forms;
 using WinFormsApp.Models;
 using WinFormsApp.Data;
@@ -31,204 +32,544 @@ namespace WinFormsApp.Forms
             currentUser = user;
             InitializeComponent();
             LoadRecommendedBooks();
-        }
-
-        private void InitializeComponent()
+        }        private void InitializeComponent()
         {
-            this.Text = $"Library Dashboard - Welcome {currentUser.FirstName}";
-            this.Size = new Size(900, 700);
+            this.Text = $"IHEC Digital Library - Welcome {currentUser.FirstName}";
+            this.Size = new Size(1200, 800);
             this.StartPosition = FormStartPosition.CenterScreen;
+            this.WindowState = FormWindowState.Maximized;
+            this.BackColor = Color.FromArgb(248, 249, 250);
 
             tabControl = new TabControl();
             tabControl.Dock = DockStyle.Fill;
+            tabControl.Font = new Font("Segoe UI", 11, FontStyle.Bold);
+            tabControl.ItemSize = new Size(120, 35);
+            tabControl.Appearance = TabAppearance.FlatButtons;
+            tabControl.DrawMode = TabDrawMode.OwnerDrawFixed;
+              // Custom tab drawing for modern look
+            tabControl.DrawItem += (s, e) => {
+                if (s is TabControl tc)
+                {
+                    Rectangle r = e.Bounds;
+                    string title = tc.TabPages[e.Index].Text;
+                    
+                    using (Brush brush = new SolidBrush(e.Index == tc.SelectedIndex ? 
+                        Color.FromArgb(70, 130, 180) : Color.FromArgb(200, 200, 200)))
+                    {
+                        e.Graphics.FillRectangle(brush, r);
+                    }
+                    
+                    using (Brush textBrush = new SolidBrush(e.Index == tc.SelectedIndex ? 
+                        Color.White : Color.FromArgb(80, 80, 80)))
+                    {
+                        StringFormat sf = new StringFormat();
+                        sf.Alignment = StringAlignment.Center;
+                        sf.LineAlignment = StringAlignment.Center;
+                        e.Graphics.DrawString(title, tabControl.Font, textBrush, r, sf);
+                    }
+                }
+            };
 
-            // Home Tab
-            TabPage homeTab = new TabPage("Home");
+            // Home Tab with modern icons
+            TabPage homeTab = new TabPage("🏠 Home");
+            homeTab.BackColor = Color.White;
             CreateHomeTab(homeTab);
 
             // Library Tab
-            TabPage libraryTab = new TabPage("Library");
+            TabPage libraryTab = new TabPage("📚 Library");
+            libraryTab.BackColor = Color.White;
             CreateLibraryTab(libraryTab);
 
             // Profile Tab
-            TabPage profileTab = new TabPage("Profile");
+            TabPage profileTab = new TabPage("👤 Profile");
+            profileTab.BackColor = Color.White;
             CreateProfileTab(profileTab);
 
             // Chatbot Tab
-            TabPage chatbotTab = new TabPage("Chatbot");
+            TabPage chatbotTab = new TabPage("🤖 AI Assistant");
+            chatbotTab.BackColor = Color.White;
             CreateChatbotTab(chatbotTab);
 
             tabControl.TabPages.AddRange(new TabPage[] { homeTab, libraryTab, profileTab, chatbotTab });
             this.Controls.Add(tabControl);
-        }
-
-        private void CreateHomeTab(TabPage tab)
+        }        private void CreateHomeTab(TabPage tab)
         {
+            // Modern gradient background for the tab
+            tab.Paint += (s, e) => {
+                using (LinearGradientBrush brush = new LinearGradientBrush(
+                    tab.ClientRectangle, 
+                    Color.FromArgb(245, 247, 250), 
+                    Color.FromArgb(195, 207, 226), 
+                    LinearGradientMode.Vertical))
+                {
+                    e.Graphics.FillRectangle(brush, tab.ClientRectangle);
+                }
+            };
+
+            // Welcome section with modern card design
+            Panel welcomeCard = new Panel();
+            welcomeCard.Location = new Point(20, 20);
+            welcomeCard.Size = new Size(900, 80);
+            welcomeCard.BackColor = Color.White;
+            welcomeCard.BorderStyle = BorderStyle.None;
+            
+            // Add shadow effect
+            welcomeCard.Paint += (s, e) => {
+                // Draw shadow
+                e.Graphics.FillRectangle(new SolidBrush(Color.FromArgb(30, 0, 0, 0)), 
+                    3, 3, welcomeCard.Width, welcomeCard.Height);
+                // Draw card background
+                e.Graphics.FillRectangle(Brushes.White, 0, 0, welcomeCard.Width - 3, welcomeCard.Height - 3);
+            };
+
             Label lblWelcome = new Label();
-            lblWelcome.Text = $"Welcome back, {currentUser.FirstName}!";
-            lblWelcome.Font = new Font("Arial", 16, FontStyle.Bold);
-            lblWelcome.Location = new Point(20, 20);
-            lblWelcome.Size = new Size(400, 30);
+            lblWelcome.Text = $"🎉 Welcome back, {currentUser.FirstName}!";
+            lblWelcome.Font = new Font("Segoe UI", 18, FontStyle.Bold);
+            lblWelcome.ForeColor = Color.FromArgb(70, 130, 180);
+            lblWelcome.Location = new Point(30, 15);
+            lblWelcome.Size = new Size(500, 30);
+            lblWelcome.BackColor = Color.Transparent;
 
+            Label lblSubtitle = new Label();
+            lblSubtitle.Text = "Discover your next favorite book from our curated recommendations";
+            lblSubtitle.Font = new Font("Segoe UI", 11, FontStyle.Regular);
+            lblSubtitle.ForeColor = Color.FromArgb(120, 120, 120);
+            lblSubtitle.Location = new Point(30, 45);
+            lblSubtitle.Size = new Size(500, 20);
+            lblSubtitle.BackColor = Color.Transparent;
+
+            // Add Logout Button to welcome card
+            Button btnLogout = new Button();
+            btnLogout.Text = "🚪 Logout";
+            btnLogout.Location = new Point(750, 25);
+            btnLogout.Size = new Size(120, 30);
+            btnLogout.Font = new Font("Segoe UI", 10, FontStyle.Bold);
+            btnLogout.BackColor = Color.FromArgb(220, 53, 69);
+            btnLogout.ForeColor = Color.White;
+            btnLogout.FlatStyle = FlatStyle.Flat;
+            btnLogout.FlatAppearance.BorderSize = 0;
+            btnLogout.Cursor = Cursors.Hand;
+            btnLogout.Click += (s, e) => {
+                var result = MessageBox.Show("Are you sure you want to logout?", "Logout Confirmation", 
+                    MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+                if (result == DialogResult.Yes)
+                {
+                    this.Close();
+                }
+            };
+            
+            btnLogout.MouseEnter += (s, e) => btnLogout.BackColor = Color.FromArgb(225, 83, 97);
+            btnLogout.MouseLeave += (s, e) => btnLogout.BackColor = Color.FromArgb(220, 53, 69);
+
+            welcomeCard.Controls.AddRange(new Control[] { lblWelcome, lblSubtitle, btnLogout });
+
+            // Recommendations section header
             Label lblRecommended = new Label();
-            lblRecommended.Text = "Recommended Books for You:";
-            lblRecommended.Font = new Font("Arial", 12, FontStyle.Bold);
-            lblRecommended.Location = new Point(20, 70);
-            lblRecommended.Size = new Size(300, 25);
+            lblRecommended.Text = "📚 Personalized Recommendations";
+            lblRecommended.Font = new Font("Segoe UI", 14, FontStyle.Bold);
+            lblRecommended.ForeColor = Color.FromArgb(52, 73, 94);
+            lblRecommended.Location = new Point(20, 120);
+            lblRecommended.Size = new Size(400, 25);
+            lblRecommended.BackColor = Color.Transparent;
 
+            // Enhanced ListView with modern styling
             lstRecommended = new ListView();
-            lstRecommended.Location = new Point(20, 100);
-            lstRecommended.Size = new Size(820, 400);
+            lstRecommended.Location = new Point(20, 155);
+            lstRecommended.Size = new Size(900, 350);
             lstRecommended.View = View.Details;
             lstRecommended.FullRowSelect = true;
             lstRecommended.GridLines = true;
+            lstRecommended.BorderStyle = BorderStyle.None;
+            lstRecommended.BackColor = Color.White;
+            lstRecommended.Font = new Font("Segoe UI", 10, FontStyle.Regular);
+            
+            // Add modern column headers with emojis
             lstRecommended.Columns.AddRange(new ColumnHeader[] {
-                new ColumnHeader() { Text = "Title", Width = 200 },
-                new ColumnHeader() { Text = "Author", Width = 150 },
-                new ColumnHeader() { Text = "Category", Width = 120 },
-                new ColumnHeader() { Text = "Available", Width = 80 },
-                new ColumnHeader() { Text = "Field", Width = 100 }
+                new ColumnHeader() { Text = "📖 Title", Width = 220 },
+                new ColumnHeader() { Text = "✍️ Author", Width = 170 },
+                new ColumnHeader() { Text = "📂 Category", Width = 140 },
+                new ColumnHeader() { Text = "📊 Available", Width = 100 },
+                new ColumnHeader() { Text = "🎓 Field", Width = 120 }
             });
 
+            // Modern action buttons with enhanced styling
             Button btnRefreshHome = new Button();
-            btnRefreshHome.Text = "Refresh";
+            btnRefreshHome.Text = "🔄 Refresh Recommendations";
             btnRefreshHome.Location = new Point(20, 520);
-            btnRefreshHome.Size = new Size(100, 30);
-            btnRefreshHome.BackColor = Color.DodgerBlue;
+            btnRefreshHome.Size = new Size(200, 40);
+            btnRefreshHome.Font = new Font("Segoe UI", 11, FontStyle.Bold);
+            btnRefreshHome.BackColor = Color.FromArgb(70, 130, 180);
             btnRefreshHome.ForeColor = Color.White;
+            btnRefreshHome.FlatStyle = FlatStyle.Flat;
+            btnRefreshHome.FlatAppearance.BorderSize = 0;
+            btnRefreshHome.Cursor = Cursors.Hand;
             btnRefreshHome.Click += (s, e) => LoadRecommendedBooks();
+            
+            // Add hover effects
+            btnRefreshHome.MouseEnter += (s, e) => btnRefreshHome.BackColor = Color.FromArgb(100, 149, 237);
+            btnRefreshHome.MouseLeave += (s, e) => btnRefreshHome.BackColor = Color.FromArgb(70, 130, 180);
 
-            tab.Controls.AddRange(new Control[] { lblWelcome, lblRecommended, lstRecommended, btnRefreshHome });
-        }
+            Button btnViewAllBooks = new Button();
+            btnViewAllBooks.Text = "📚 Browse All Books";
+            btnViewAllBooks.Location = new Point(240, 520);
+            btnViewAllBooks.Size = new Size(180, 40);
+            btnViewAllBooks.Font = new Font("Segoe UI", 11, FontStyle.Bold);
+            btnViewAllBooks.BackColor = Color.FromArgb(34, 139, 34);
+            btnViewAllBooks.ForeColor = Color.White;
+            btnViewAllBooks.FlatStyle = FlatStyle.Flat;
+            btnViewAllBooks.FlatAppearance.BorderSize = 0;
+            btnViewAllBooks.Cursor = Cursors.Hand;
+            btnViewAllBooks.Click += (s, e) => {
+                // Switch to Library tab
+                if (tabControl.TabPages.Count > 1)
+                    tabControl.SelectedIndex = 1;
+            };
+            
+            // Add hover effects
+            btnViewAllBooks.MouseEnter += (s, e) => btnViewAllBooks.BackColor = Color.FromArgb(60, 179, 113);
+            btnViewAllBooks.MouseLeave += (s, e) => btnViewAllBooks.BackColor = Color.FromArgb(34, 139, 34);
 
-        private void CreateLibraryTab(TabPage tab)
+            // Add Exit Application button
+            Button btnExitApp = new Button();
+            btnExitApp.Text = "❌ Exit Application";
+            btnExitApp.Location = new Point(740, 520);
+            btnExitApp.Size = new Size(180, 40);
+            btnExitApp.Font = new Font("Segoe UI", 11, FontStyle.Bold);
+            btnExitApp.BackColor = Color.FromArgb(108, 117, 125);
+            btnExitApp.ForeColor = Color.White;
+            btnExitApp.FlatStyle = FlatStyle.Flat;
+            btnExitApp.FlatAppearance.BorderSize = 0;
+            btnExitApp.Cursor = Cursors.Hand;
+            btnExitApp.Click += (s, e) => {
+                var result = MessageBox.Show("Are you sure you want to exit the application?", "Exit Application", 
+                    MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+                if (result == DialogResult.Yes)
+                {
+                    Application.Exit();
+                }
+            };
+            
+            btnExitApp.MouseEnter += (s, e) => btnExitApp.BackColor = Color.FromArgb(128, 137, 145);
+            btnExitApp.MouseLeave += (s, e) => btnExitApp.BackColor = Color.FromArgb(108, 117, 125);
+
+            tab.Controls.AddRange(new Control[] { welcomeCard, lblRecommended, lstRecommended, btnRefreshHome, btnViewAllBooks, btnExitApp });
+        }        private void CreateLibraryTab(TabPage tab)
         {
-            Label lblSearch = new Label();
-            lblSearch.Text = "Search Books:";
-            lblSearch.Location = new Point(20, 20);
-            lblSearch.Size = new Size(100, 20);
+            // Modern gradient background for the tab
+            tab.Paint += (s, e) => {
+                using (LinearGradientBrush brush = new LinearGradientBrush(
+                    tab.ClientRectangle, 
+                    Color.FromArgb(245, 247, 250), 
+                    Color.FromArgb(195, 207, 226), 
+                    LinearGradientMode.Vertical))
+                {
+                    e.Graphics.FillRectangle(brush, tab.ClientRectangle);
+                }
+            };
 
-            txtSearch = new TextBox();
-            txtSearch.Location = new Point(130, 18);
-            txtSearch.Size = new Size(300, 25);
+            // Search section with modern card design
+            Panel searchCard = new Panel();
+            searchCard.Location = new Point(20, 20);
+            searchCard.Size = new Size(900, 70);
+            searchCard.BackColor = Color.White;
+            searchCard.BorderStyle = BorderStyle.None;
+            
+            // Add shadow effect
+            searchCard.Paint += (s, e) => {
+                e.Graphics.FillRectangle(new SolidBrush(Color.FromArgb(30, 0, 0, 0)), 
+                    3, 3, searchCard.Width, searchCard.Height);
+                e.Graphics.FillRectangle(Brushes.White, 0, 0, searchCard.Width - 3, searchCard.Height - 3);
+            };
+
+            Label lblSearch = new Label();
+            lblSearch.Text = "🔍 Search Library Collection:";
+            lblSearch.Location = new Point(20, 15);
+            lblSearch.Size = new Size(200, 20);
+            lblSearch.Font = new Font("Segoe UI", 11, FontStyle.Bold);
+            lblSearch.ForeColor = Color.FromArgb(52, 73, 94);
+            lblSearch.BackColor = Color.Transparent;            txtSearch = new TextBox();
+            txtSearch.Location = new Point(20, 40);
+            txtSearch.Size = new Size(350, 25);
+            txtSearch.Font = new Font("Segoe UI", 11);
+            txtSearch.BorderStyle = BorderStyle.FixedSingle;
+            txtSearch.PlaceholderText = "Search by title, author, category, or field...";
+            txtSearch.Enabled = true;
+            txtSearch.ReadOnly = false;
+            txtSearch.TabIndex = 1;
 
             Button btnSearch = new Button();
-            btnSearch.Text = "Search";
-            btnSearch.Location = new Point(450, 16);
-            btnSearch.Size = new Size(80, 30);
-            btnSearch.BackColor = Color.Green;
+            btnSearch.Text = "🔍 Search";
+            btnSearch.Location = new Point(380, 38);
+            btnSearch.Size = new Size(100, 30);
+            btnSearch.Font = new Font("Segoe UI", 10, FontStyle.Bold);
+            btnSearch.BackColor = Color.FromArgb(34, 139, 34);
             btnSearch.ForeColor = Color.White;
+            btnSearch.FlatStyle = FlatStyle.Flat;
+            btnSearch.FlatAppearance.BorderSize = 0;
+            btnSearch.Cursor = Cursors.Hand;
             btnSearch.Click += (s, e) => SearchBooks(txtSearch.Text);
+            
+            btnSearch.MouseEnter += (s, e) => btnSearch.BackColor = Color.FromArgb(60, 179, 113);
+            btnSearch.MouseLeave += (s, e) => btnSearch.BackColor = Color.FromArgb(34, 139, 34);
 
             Button btnShowAll = new Button();
-            btnShowAll.Text = "Show All";
-            btnShowAll.Location = new Point(540, 16);
-            btnShowAll.Size = new Size(80, 30);
-            btnShowAll.BackColor = Color.Blue;
+            btnShowAll.Text = "📚 Show All";
+            btnShowAll.Location = new Point(490, 38);
+            btnShowAll.Size = new Size(100, 30);
+            btnShowAll.Font = new Font("Segoe UI", 10, FontStyle.Bold);
+            btnShowAll.BackColor = Color.FromArgb(70, 130, 180);
             btnShowAll.ForeColor = Color.White;
+            btnShowAll.FlatStyle = FlatStyle.Flat;
+            btnShowAll.FlatAppearance.BorderSize = 0;
+            btnShowAll.Cursor = Cursors.Hand;
             btnShowAll.Click += (s, e) => LoadAllBooks();
+            
+            btnShowAll.MouseEnter += (s, e) => btnShowAll.BackColor = Color.FromArgb(100, 149, 237);
+            btnShowAll.MouseLeave += (s, e) => btnShowAll.BackColor = Color.FromArgb(70, 130, 180);
 
+            searchCard.Controls.AddRange(new Control[] { lblSearch, txtSearch, btnSearch, btnShowAll });
+
+            // Enhanced Books ListView with modern styling
             lstBooks = new ListView();
-            lstBooks.Location = new Point(20, 60);
-            lstBooks.Size = new Size(820, 450);
+            lstBooks.Location = new Point(20, 110);
+            lstBooks.Size = new Size(900, 380);
             lstBooks.View = View.Details;
             lstBooks.FullRowSelect = true;
             lstBooks.GridLines = true;
+            lstBooks.BorderStyle = BorderStyle.None;
+            lstBooks.BackColor = Color.White;
+            lstBooks.Font = new Font("Segoe UI", 10, FontStyle.Regular);
+            
+            // Add modern column headers with emojis
             lstBooks.Columns.AddRange(new ColumnHeader[] {
-                new ColumnHeader() { Text = "ID", Width = 50 },
-                new ColumnHeader() { Text = "Title", Width = 200 },
-                new ColumnHeader() { Text = "Author", Width = 150 },
-                new ColumnHeader() { Text = "Category", Width = 100 },
-                new ColumnHeader() { Text = "Field", Width = 100 },
-                new ColumnHeader() { Text = "Available", Width = 80 },
-                new ColumnHeader() { Text = "Total", Width = 80 }
+                new ColumnHeader() { Text = "🆔 ID", Width = 60 },
+                new ColumnHeader() { Text = "📖 Title", Width = 220 },
+                new ColumnHeader() { Text = "✍️ Author", Width = 170 },
+                new ColumnHeader() { Text = "📂 Category", Width = 120 },
+                new ColumnHeader() { Text = "🎓 Field", Width = 120 },
+                new ColumnHeader() { Text = "📊 Available", Width = 90 },
+                new ColumnHeader() { Text = "📚 Total", Width = 80 }
             });
+
+            // Modern action buttons with enhanced styling
+            Panel actionPanel = new Panel();
+            actionPanel.Location = new Point(20, 500);
+            actionPanel.Size = new Size(900, 50);
+            actionPanel.BackColor = Color.Transparent;
 
             Button btnReserve = new Button();
-            btnReserve.Text = "Reserve Selected";
-            btnReserve.Location = new Point(20, 530);
-            btnReserve.Size = new Size(120, 35);
-            btnReserve.BackColor = Color.Orange;
+            btnReserve.Text = "📋 Reserve Selected";
+            btnReserve.Location = new Point(0, 10);
+            btnReserve.Size = new Size(160, 40);
+            btnReserve.Font = new Font("Segoe UI", 11, FontStyle.Bold);
+            btnReserve.BackColor = Color.FromArgb(255, 140, 0);
             btnReserve.ForeColor = Color.White;
+            btnReserve.FlatStyle = FlatStyle.Flat;
+            btnReserve.FlatAppearance.BorderSize = 0;
+            btnReserve.Cursor = Cursors.Hand;
             btnReserve.Click += (s, e) => ReserveSelectedBook();
+            
+            btnReserve.MouseEnter += (s, e) => btnReserve.BackColor = Color.FromArgb(255, 165, 0);
+            btnReserve.MouseLeave += (s, e) => btnReserve.BackColor = Color.FromArgb(255, 140, 0);
 
             Button btnLike = new Button();
-            btnLike.Text = "Like Selected";
-            btnLike.Location = new Point(160, 530);
-            btnLike.Size = new Size(120, 35);
-            btnLike.BackColor = Color.Red;
+            btnLike.Text = "❤️ Like Selected";
+            btnLike.Location = new Point(180, 10);
+            btnLike.Size = new Size(150, 40);
+            btnLike.Font = new Font("Segoe UI", 11, FontStyle.Bold);
+            btnLike.BackColor = Color.FromArgb(220, 53, 69);
             btnLike.ForeColor = Color.White;
+            btnLike.FlatStyle = FlatStyle.Flat;
+            btnLike.FlatAppearance.BorderSize = 0;
+            btnLike.Cursor = Cursors.Hand;
             btnLike.Click += (s, e) => LikeSelectedBook();
+            
+            btnLike.MouseEnter += (s, e) => btnLike.BackColor = Color.FromArgb(225, 83, 97);
+            btnLike.MouseLeave += (s, e) => btnLike.BackColor = Color.FromArgb(220, 53, 69);
 
             Button btnRefresh = new Button();
-            btnRefresh.Text = "Refresh";
-            btnRefresh.Location = new Point(300, 530);
-            btnRefresh.Size = new Size(100, 35);
-            btnRefresh.BackColor = Color.DodgerBlue;
+            btnRefresh.Text = "🔄 Refresh";
+            btnRefresh.Location = new Point(350, 10);
+            btnRefresh.Size = new Size(120, 40);
+            btnRefresh.Font = new Font("Segoe UI", 11, FontStyle.Bold);
+            btnRefresh.BackColor = Color.FromArgb(70, 130, 180);
             btnRefresh.ForeColor = Color.White;
+            btnRefresh.FlatStyle = FlatStyle.Flat;
+            btnRefresh.FlatAppearance.BorderSize = 0;
+            btnRefresh.Cursor = Cursors.Hand;
             btnRefresh.Click += (s, e) => LoadAllBooks();
+            
+            btnRefresh.MouseEnter += (s, e) => btnRefresh.BackColor = Color.FromArgb(100, 149, 237);
+            btnRefresh.MouseLeave += (s, e) => btnRefresh.BackColor = Color.FromArgb(70, 130, 180);
 
-            tab.Controls.AddRange(new Control[] {
-                lblSearch, txtSearch, btnSearch, btnShowAll, lstBooks, btnReserve, btnLike, btnRefresh
-            });
+            actionPanel.Controls.AddRange(new Control[] { btnReserve, btnLike, btnRefresh });
+
+            tab.Controls.AddRange(new Control[] { searchCard, lstBooks, actionPanel });
 
             // Load all books initially
             LoadAllBooks();
         }        private void CreateProfileTab(TabPage tab)
         {
-            Label lblProfile = new Label();
-            lblProfile.Text = "Profile Information";
-            lblProfile.Font = new Font("Arial", 16, FontStyle.Bold);
-            lblProfile.Location = new Point(20, 20);
-            lblProfile.Size = new Size(200, 30);
+            // Modern gradient background for the tab
+            tab.Paint += (s, e) => {
+                using (LinearGradientBrush brush = new LinearGradientBrush(
+                    tab.ClientRectangle, 
+                    Color.FromArgb(245, 247, 250), 
+                    Color.FromArgb(195, 207, 226), 
+                    LinearGradientMode.Vertical))
+                {
+                    e.Graphics.FillRectangle(brush, tab.ClientRectangle);
+                }
+            };
 
-            // Display user information
+            // Profile Information Card
+            Panel profileCard = new Panel();
+            profileCard.Location = new Point(20, 20);
+            profileCard.Size = new Size(450, 300);
+            profileCard.BackColor = Color.White;
+            profileCard.BorderStyle = BorderStyle.None;
+            
+            // Add shadow effect to profile card
+            profileCard.Paint += (s, e) => {
+                e.Graphics.FillRectangle(new SolidBrush(Color.FromArgb(30, 0, 0, 0)), 
+                    3, 3, profileCard.Width, profileCard.Height);
+                e.Graphics.FillRectangle(Brushes.White, 0, 0, profileCard.Width - 3, profileCard.Height - 3);
+            };
+
+            Label lblProfile = new Label();
+            lblProfile.Text = "👤 Profile Information";
+            lblProfile.Font = new Font("Segoe UI", 16, FontStyle.Bold);
+            lblProfile.ForeColor = Color.FromArgb(70, 130, 180);
+            lblProfile.Location = new Point(20, 20);
+            lblProfile.Size = new Size(250, 30);
+            lblProfile.BackColor = Color.Transparent;
+
+            // Display user information with modern styling
             int yPos = 70;
-            CreateProfileField(tab, "Name:", $"{currentUser.FirstName} {currentUser.LastName}", yPos);
-            yPos += 40;
-            CreateProfileField(tab, "Email:", currentUser.Email, yPos);
-            yPos += 40;
-            CreateProfileField(tab, "Study Level:", currentUser.StudyLevel, yPos);
-            yPos += 40;
-            CreateProfileField(tab, "Study Field:", currentUser.StudyField, yPos);
-            yPos += 40;
-            CreateProfileField(tab, "Member Since:", currentUser.CreatedDate.ToString("MMM dd, yyyy"), yPos);
-            yPos += 60;
+            CreateModernProfileField(profileCard, "👤 Name:", $"{currentUser.FirstName} {currentUser.LastName}", yPos);
+            yPos += 35;
+            CreateModernProfileField(profileCard, "📧 Email:", currentUser.Email, yPos);
+            yPos += 35;
+            CreateModernProfileField(profileCard, "🎓 Study Level:", currentUser.StudyLevel, yPos);
+            yPos += 35;
+            CreateModernProfileField(profileCard, "📚 Study Field:", currentUser.StudyField, yPos);
+            yPos += 35;
+            CreateModernProfileField(profileCard, "📅 Member Since:", currentUser.CreatedDate.ToString("MMM dd, yyyy"), yPos);
+
+            // Statistics Card
+            Panel statsCard = new Panel();
+            statsCard.Location = new Point(490, 20);
+            statsCard.Size = new Size(430, 300);
+            statsCard.BackColor = Color.White;
+            statsCard.BorderStyle = BorderStyle.None;
+            
+            // Add shadow effect to stats card
+            statsCard.Paint += (s, e) => {
+                e.Graphics.FillRectangle(new SolidBrush(Color.FromArgb(30, 0, 0, 0)), 
+                    3, 3, statsCard.Width, statsCard.Height);
+                e.Graphics.FillRectangle(Brushes.White, 0, 0, statsCard.Width - 3, statsCard.Height - 3);
+            };
 
             Label lblStats = new Label();
-            lblStats.Text = "Library Statistics";
-            lblStats.Font = new Font("Arial", 14, FontStyle.Bold);
-            lblStats.Location = new Point(20, yPos);
-            lblStats.Size = new Size(200, 25);
-            yPos += 40;
+            lblStats.Text = "📊 Library Statistics";
+            lblStats.Font = new Font("Segoe UI", 16, FontStyle.Bold);
+            lblStats.ForeColor = Color.FromArgb(70, 130, 180);
+            lblStats.Location = new Point(20, 20);
+            lblStats.Size = new Size(250, 30);
+            lblStats.BackColor = Color.Transparent;
 
             // Get actual statistics from database
             var stats = GetUserStatistics();
             
-            CreateProfileField(tab, "Books Reserved:", stats.ReservedBooks.ToString(), yPos);
-            yPos += 30;
-            CreateProfileField(tab, "Active Reservations:", stats.ActiveReservations.ToString(), yPos);
-            yPos += 30;
-            CreateProfileField(tab, "Books Liked:", stats.LikedBooks.ToString(), yPos);
-            yPos += 30;
-            CreateProfileField(tab, "Most Liked Category:", stats.FavoriteCategory ?? "None", yPos);
-            yPos += 30;
-            CreateProfileField(tab, "Books in Your Field:", stats.BooksInField.ToString(), yPos);
-            yPos += 30;
-            CreateProfileField(tab, "Total Available Books:", stats.TotalAvailableBooks.ToString(), yPos);
+            yPos = 70;
+            CreateModernStatsField(statsCard, "📋 Books Reserved:", stats.ReservedBooks.ToString(), yPos, Color.FromArgb(255, 140, 0));
+            yPos += 35;
+            CreateModernStatsField(statsCard, "🟢 Active Reservations:", stats.ActiveReservations.ToString(), yPos, Color.FromArgb(34, 139, 34));
+            yPos += 35;
+            CreateModernStatsField(statsCard, "❤️ Books Liked:", stats.LikedBooks.ToString(), yPos, Color.FromArgb(220, 53, 69));
+            yPos += 35;
+            CreateModernStatsField(statsCard, "⭐ Favorite Category:", stats.FavoriteCategory ?? "None", yPos, Color.FromArgb(102, 51, 153));
+            yPos += 35;
+            CreateModernStatsField(statsCard, "🎓 Books in Your Field:", stats.BooksInField.ToString(), yPos, Color.FromArgb(70, 130, 180));
 
-            // Add a refresh button for statistics
+            // Action buttons with modern styling
             Button btnRefreshStats = new Button();
-            btnRefreshStats.Text = "Refresh Statistics";
-            btnRefreshStats.Location = new Point(20, yPos + 50);
-            btnRefreshStats.Size = new Size(150, 35);
-            btnRefreshStats.BackColor = Color.DodgerBlue;
+            btnRefreshStats.Text = "🔄 Refresh Statistics";
+            btnRefreshStats.Location = new Point(20, 340);
+            btnRefreshStats.Size = new Size(200, 45);
+            btnRefreshStats.Font = new Font("Segoe UI", 12, FontStyle.Bold);
+            btnRefreshStats.BackColor = Color.FromArgb(70, 130, 180);
             btnRefreshStats.ForeColor = Color.White;
+            btnRefreshStats.FlatStyle = FlatStyle.Flat;
+            btnRefreshStats.FlatAppearance.BorderSize = 0;
+            btnRefreshStats.Cursor = Cursors.Hand;
             btnRefreshStats.Click += (s, e) => RefreshProfileTab(tab);
+            
+            btnRefreshStats.MouseEnter += (s, e) => btnRefreshStats.BackColor = Color.FromArgb(100, 149, 237);
+            btnRefreshStats.MouseLeave += (s, e) => btnRefreshStats.BackColor = Color.FromArgb(70, 130, 180);
 
-            tab.Controls.Add(lblProfile);
-            tab.Controls.Add(lblStats);
-            tab.Controls.Add(btnRefreshStats);
+            Button btnViewReservations = new Button();
+            btnViewReservations.Text = "📋 View My Reservations";
+            btnViewReservations.Location = new Point(240, 340);
+            btnViewReservations.Size = new Size(200, 45);
+            btnViewReservations.Font = new Font("Segoe UI", 12, FontStyle.Bold);
+            btnViewReservations.BackColor = Color.FromArgb(255, 140, 0);
+            btnViewReservations.ForeColor = Color.White;
+            btnViewReservations.FlatStyle = FlatStyle.Flat;
+            btnViewReservations.FlatAppearance.BorderSize = 0;
+            btnViewReservations.Cursor = Cursors.Hand;
+            btnViewReservations.Click += (s, e) => {
+                MessageBox.Show($"You have {stats.ActiveReservations} active reservations.\nView them in the Library section!", 
+                    "Reservations Info", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            };
+            
+            btnViewReservations.MouseEnter += (s, e) => btnViewReservations.BackColor = Color.FromArgb(255, 165, 0);
+            btnViewReservations.MouseLeave += (s, e) => btnViewReservations.BackColor = Color.FromArgb(255, 140, 0);
+
+            tab.Controls.AddRange(new Control[] { profileCard, statsCard, btnRefreshStats, btnViewReservations });
+        }
+
+        private void CreateModernProfileField(Panel parent, string label, string? value, int yPos)
+        {
+            Label lbl = new Label();
+            lbl.Text = label;
+            lbl.Location = new Point(20, yPos);
+            lbl.Size = new Size(150, 25);
+            lbl.Font = new Font("Segoe UI", 11, FontStyle.Bold);
+            lbl.ForeColor = Color.FromArgb(52, 73, 94);
+            lbl.BackColor = Color.Transparent;
+
+            Label val = new Label();
+            val.Text = value ?? "N/A";
+            val.Location = new Point(180, yPos);
+            val.Size = new Size(250, 25);
+            val.Font = new Font("Segoe UI", 11, FontStyle.Regular);
+            val.ForeColor = Color.FromArgb(73, 80, 87);
+            val.BackColor = Color.Transparent;
+
+            parent.Controls.AddRange(new Control[] { lbl, val });
+        }
+
+        private void CreateModernStatsField(Panel parent, string label, string value, int yPos, Color accentColor)
+        {
+            Label lbl = new Label();
+            lbl.Text = label;
+            lbl.Location = new Point(20, yPos);
+            lbl.Size = new Size(200, 25);
+            lbl.Font = new Font("Segoe UI", 11, FontStyle.Bold);
+            lbl.ForeColor = Color.FromArgb(52, 73, 94);
+            lbl.BackColor = Color.Transparent;
+
+            Label val = new Label();
+            val.Text = value;
+            val.Location = new Point(230, yPos);
+            val.Size = new Size(180, 25);
+            val.Font = new Font("Segoe UI", 11, FontStyle.Bold);
+            val.ForeColor = accentColor;
+            val.BackColor = Color.Transparent;
+            val.TextAlign = ContentAlignment.MiddleLeft;
+
+            parent.Controls.AddRange(new Control[] { lbl, val });
         }
 
         private void CreateProfileField(TabPage tab, string label, string? value, int yPos)

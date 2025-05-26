@@ -15,12 +15,12 @@ namespace WinFormsApp.Forms
         private TextBox txtMessage = null!;
         private RichTextBox rtbChat = null!;
         private Button btnSend = null!;
-        private User currentUser;
-
-        public ChatbotForm(User user)
+        private User currentUser;        public ChatbotForm(User user)
         {
             currentUser = user;
             InitializeComponent();
+            // Set focus to message textbox when form loads
+            this.Load += (s, e) => txtMessage.Focus();
         }
 
         private void InitializeComponent()
@@ -28,36 +28,132 @@ namespace WinFormsApp.Forms
             this.Text = "Library Assistant Chatbot";
             this.Size = new Size(900, 700);
             this.StartPosition = FormStartPosition.CenterScreen;
+            this.BackColor = Color.FromArgb(247, 247, 247);
 
-            // Chat display
+            // Chat display with modern styling
             rtbChat = new RichTextBox();
             rtbChat.Location = new Point(20, 20);
-            rtbChat.Size = new Size(540, 350);
+            rtbChat.Size = new Size(840, 500);
             rtbChat.ReadOnly = true;
             rtbChat.BackColor = Color.White;
+            rtbChat.Font = new Font("Segoe UI", 11);
+            rtbChat.BorderStyle = BorderStyle.None;
+            rtbChat.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right | AnchorStyles.Bottom;
+            
+            // Add rounded border effect for chat display
+            rtbChat.Paint += (s, e) => {
+                using (var pen = new Pen(Color.FromArgb(200, 200, 200), 1))
+                {
+                    e.Graphics.DrawRectangle(pen, 0, 0, rtbChat.Width - 1, rtbChat.Height - 1);
+                }
+            };
 
-            // Message input
+            // Claude-like input container
+            Panel inputContainer = new Panel();
+            inputContainer.Location = new Point(20, 540);
+            inputContainer.Size = new Size(760, 80);
+            inputContainer.BackColor = Color.White;
+            inputContainer.Anchor = AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
+            
+            // Add rounded border and shadow effect
+            inputContainer.Paint += (s, e) => {
+                var rect = inputContainer.ClientRectangle;
+                
+                // Draw shadow
+                using (var shadowBrush = new SolidBrush(Color.FromArgb(30, 0, 0, 0)))
+                {
+                    e.Graphics.FillRectangle(shadowBrush, new Rectangle(2, 2, rect.Width, rect.Height));
+                }
+                
+                // Draw main container
+                using (var brush = new SolidBrush(Color.White))
+                {
+                    e.Graphics.FillRectangle(brush, new Rectangle(0, 0, rect.Width - 2, rect.Height - 2));
+                }
+                
+                // Draw border
+                using (var pen = new Pen(Color.FromArgb(220, 220, 220), 1))
+                {
+                    e.Graphics.DrawRectangle(pen, 0, 0, rect.Width - 3, rect.Height - 3);
+                }
+            };
+            
+            // Multi-line text input like Claude
             txtMessage = new TextBox();
-            txtMessage.Location = new Point(20, 390);
-            txtMessage.Size = new Size(440, 25);
-            txtMessage.KeyPress += TxtMessage_KeyPress;
+            txtMessage.Location = new Point(15, 15);
+            txtMessage.Size = new Size(640, 50);
+            txtMessage.Font = new Font("Segoe UI", 12);
+            txtMessage.BorderStyle = BorderStyle.None;
+            txtMessage.BackColor = Color.White;
+            txtMessage.PlaceholderText = "Message Library Assistant...";
+            txtMessage.Multiline = true;
+            txtMessage.ScrollBars = ScrollBars.Vertical;
+            txtMessage.Enabled = true;
+            txtMessage.ReadOnly = false;
+            txtMessage.TabIndex = 1;
+            txtMessage.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right | AnchorStyles.Bottom;            txtMessage.KeyPress += TxtMessage_KeyPress;
+            txtMessage.KeyDown += TxtMessage_KeyDown;
+            
+            // Add textbox to container
+            inputContainer.Controls.Add(txtMessage);
 
-            // Send button
+            // Modern send button with icon
             btnSend = new Button();
-            btnSend.Text = "Send";
-            btnSend.Location = new Point(480, 388);
-            btnSend.Size = new Size(80, 30);
-            btnSend.BackColor = Color.DodgerBlue;
+            btnSend.Text = "↗";
+            btnSend.Location = new Point(670, 25);
+            btnSend.Size = new Size(50, 30);
+            btnSend.BackColor = Color.FromArgb(16, 163, 127);
             btnSend.ForeColor = Color.White;
+            btnSend.FlatStyle = FlatStyle.Flat;
+            btnSend.FlatAppearance.BorderSize = 0;
+            btnSend.Font = new Font("Segoe UI", 14, FontStyle.Bold);
+            btnSend.Cursor = Cursors.Hand;
+            btnSend.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
             btnSend.Click += BtnSend_Click;
+            
+            // Add hover effects for send button
+            btnSend.MouseEnter += (s, e) => btnSend.BackColor = Color.FromArgb(13, 148, 115);
+            btnSend.MouseLeave += (s, e) => btnSend.BackColor = Color.FromArgb(16, 163, 127);
+            
+            inputContainer.Controls.Add(btnSend);
 
-            this.Controls.AddRange(new Control[] { rtbChat, txtMessage, btnSend });
+            // Close Chatbot button
+            Button btnClose = new Button();
+            btnClose.Text = "✕ Close";
+            btnClose.Location = new Point(790, 20);
+            btnClose.Size = new Size(70, 30);
+            btnClose.BackColor = Color.FromArgb(220, 53, 69);
+            btnClose.ForeColor = Color.White;
+            btnClose.FlatStyle = FlatStyle.Flat;
+            btnClose.FlatAppearance.BorderSize = 0;
+            btnClose.Cursor = Cursors.Hand;
+            btnClose.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+            btnClose.Click += BtnClose_Click;
+
+            btnClose.MouseEnter += (s, e) => btnClose.BackColor = Color.FromArgb(255, 69, 58);
+            btnClose.MouseLeave += (s, e) => btnClose.BackColor = Color.FromArgb(220, 53, 69);
+
+            // Clear Chat button
+            Button btnClear = new Button();
+            btnClear.Text = "🗑️ Clear";
+            btnClear.Location = new Point(790, 60);
+            btnClear.Size = new Size(70, 30);
+            btnClear.BackColor = Color.FromArgb(169, 169, 169);
+            btnClear.ForeColor = Color.White;
+            btnClear.FlatStyle = FlatStyle.Flat;
+            btnClear.FlatAppearance.BorderSize = 0;
+            btnClear.Cursor = Cursors.Hand;
+            btnClear.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+            btnClear.Click += BtnClear_Click;
+
+            btnClear.MouseEnter += (s, e) => btnClear.BackColor = Color.FromArgb(128, 128, 128);
+            btnClear.MouseLeave += (s, e) => btnClear.BackColor = Color.FromArgb(169, 169, 169);
+
+            this.Controls.AddRange(new Control[] { rtbChat, inputContainer, btnClose, btnClear });
 
             // Welcome message
             AddMessage("Bot", "Hello! I'm your library assistant. Ask me about books, availability, or recommendations!");
-        }
-
-        private void TxtMessage_KeyPress(object? sender, KeyPressEventArgs e)
+        }        private void TxtMessage_KeyPress(object? sender, KeyPressEventArgs e)
         {
             if (e.KeyChar == (char)Keys.Enter)
             {
@@ -66,10 +162,40 @@ namespace WinFormsApp.Forms
             }
         }
 
-        private void BtnSend_Click(object? sender, EventArgs e)
+        private void TxtMessage_KeyDown(object? sender, KeyEventArgs e)
+        {
+            // Allow Shift+Enter for new lines, Enter alone to send
+            if (e.KeyCode == Keys.Enter && !e.Shift)
+            {
+                e.Handled = true;
+                e.SuppressKeyPress = true;
+                SendMessage();
+            }
+        }private void BtnSend_Click(object? sender, EventArgs e)
         {
             SendMessage();
-        }        private async void SendMessage()
+        }
+
+        private void BtnClose_Click(object? sender, EventArgs e)
+        {
+            this.Close();
+        }
+
+        private void BtnClear_Click(object? sender, EventArgs e)
+        {
+            DialogResult result = MessageBox.Show(
+                "Are you sure you want to clear the chat history?", 
+                "Clear Chat", 
+                MessageBoxButtons.YesNo, 
+                MessageBoxIcon.Question,
+                MessageBoxDefaultButton.Button2);
+
+            if (result == DialogResult.Yes)
+            {
+                rtbChat.Clear();
+                AddMessage("Bot", "Hello! I'm your library assistant. Ask me about books, availability, or recommendations!");
+            }
+        }private async void SendMessage()
         {
             string message = txtMessage.Text.Trim();
             if (string.IsNullOrEmpty(message)) return;

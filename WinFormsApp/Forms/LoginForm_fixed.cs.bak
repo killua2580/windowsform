@@ -7,13 +7,15 @@ using WinFormsApp.Data;
 using Microsoft.Data.SqlClient;
 
 namespace WinFormsApp.Forms
-{    public partial class LoginForm : Form
+{
+    public partial class LoginForm : Form
     {
         private TextBox txtEmail = null!;
         private TextBox txtPassword = null!;
         private Button btnLogin = null!;
         private Button btnRegister = null!;
         private Button btnSkip = null!;
+        private Label lblTitle = null!;
 
         public LoginForm()
         {
